@@ -1,0 +1,1854 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="המילון שלי">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-180.png">
+<meta name="theme-color" content="#0F1417" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#EEF2F3" media="(prefers-color-scheme: light)">
+<style>
+  :root { color-scheme: light; padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+  body { margin: 0; font: 14px system-ui, sans-serif; }
+  img { max-width: 100%; }
+  [hidden] { display: none !important; }
+</style>
+<title>המילון שלי</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  /* Layout: single phone column with a fixed bottom tab bar: vocabulary, flashcards, sentences. */
+  :root {
+    --bg: #EEF2F3;
+    --surface: #FFFFFF;
+    --line: #D3DCDF;
+    --ink: #14202A;
+    --muted: #5A6B74;
+    --accent: #A8690C;
+    --accent-ink: #FFFFFF;
+    --teal: #17766B;
+    --bad: #B4452F;
+    --good-bg: #DDF1EC;
+    --bad-bg: #F8E3DD;
+    --font-ui: "Heebo", system-ui, sans-serif;
+    --font-en: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0F1417; --surface: #161D21; --line: #27323A; --ink: #E7EDF0; --muted: #8A99A1;
+      --accent: #D9A83D; --accent-ink: #14181A; --teal: #4FB6A7; --bad: #E0836E;
+      --good-bg: #16302C; --bad-bg: #3A2420; color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0F1417; --surface: #161D21; --line: #27323A; --ink: #E7EDF0; --muted: #8A99A1;
+    --accent: #D9A83D; --accent-ink: #14181A; --teal: #4FB6A7; --bad: #E0836E;
+    --good-bg: #16302C; --bad-bg: #3A2420; color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg); color: var(--ink); font-family: var(--font-ui); font-size: 16px; line-height: 1.5;
+    padding-block: 20px 96px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+  }
+  .wrap { max-width: 560px; margin: 0 auto; }
+  h1 { font-size: 22px; font-weight: 700; margin: 0; text-wrap: balance; }
+  .sub { color: var(--muted); font-size: 14px; margin-top: 2px; }
+  button { font-family: inherit; font-size: inherit; color: inherit; cursor: pointer; }
+  button:focus-visible, input:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
+  .en { font-family: var(--font-en); direction: ltr; unicode-bidi: isolate; }
+
+  header { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 18px; }
+  .count { font-family: var(--font-en); color: var(--muted); font-size: 14px; }
+
+  .add { display: flex; gap: 8px; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 6px; }
+  .add input { flex: 1; min-width: 0; background: transparent; border: 0; color: var(--ink); font-family: var(--font-ui); font-size: 17px; padding: 10px; }
+  .add input::placeholder { color: var(--muted); }
+  .btn { min-height: 44px; border: 0; border-radius: 4px; padding: 0 18px; font-weight: 700; background: var(--accent); color: var(--accent-ink); }
+  .btn:disabled { opacity: .5; cursor: default; }
+  .btn.ghost { background: transparent; color: var(--ink); border: 1px solid var(--line); }
+  .msg { min-height: 20px; margin-top: 8px; font-size: 14px; color: var(--muted); }
+  .msg.err { color: var(--bad); }
+
+  .list { margin-top: 18px; border-top: 1px solid var(--line); }
+  .row { border-bottom: 1px solid var(--line); }
+  .row-head { width: 100%; min-height: 56px; display: flex; align-items: center; justify-content: space-between; gap: 12px; background: none; border: 0; padding: 10px 2px; text-align: start; }
+  .row-head .w { font-family: var(--font-en); font-size: 17px; direction: ltr; overflow-wrap: anywhere; min-width: 0; }
+  .row-head .t { color: var(--muted); font-size: 16px; text-align: end; min-width: 0; overflow-wrap: anywhere; }
+  .detail { padding: 0 2px 16px; display: grid; gap: 12px; }
+  .pos { font-size: 13px; color: var(--teal); }
+  .alt { font-size: 14px; color: var(--muted); }
+  .sent { border-inline-start: 3px solid var(--accent); padding-inline-start: 12px; display: grid; gap: 2px; }
+  .sent .s-en { font-size: 16px; line-height: 1.6; text-align: right; direction: ltr; unicode-bidi: isolate; overflow-wrap: anywhere; }
+  .sent .he { font-size: 15px; color: var(--muted); }
+  mark { background: transparent; color: var(--accent); font-weight: 700; }
+  .stats { font-size: 13px; color: var(--muted); display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
+  .del { background: none; border: 0; color: var(--muted); padding: 8px 0; min-height: 44px; }
+  .del.armed { color: var(--bad); font-weight: 700; }
+
+  .empty { margin-top: 36px; color: var(--muted); text-align: center; line-height: 1.8; }
+
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 18px 16px; }
+  .card-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 14px; font-size: 13px; color: var(--muted); }
+  .small { min-height: 36px; padding: 0 12px; font-size: 13px; font-weight: 500; }
+
+  /* flashcards */
+  .fc-word { font-size: 32px; font-weight: 700; text-align: center; padding: 14px 0 6px; overflow-wrap: anywhere; text-wrap: balance; }
+  .fc-word.en { font-family: var(--font-en); font-weight: 600; font-size: 30px; }
+  .opts { display: grid; gap: 8px; margin-top: 16px; }
+  .opt { min-height: 52px; text-align: start; font-size: 17px; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 10px 14px; overflow-wrap: anywhere; }
+  .opt.en { text-align: left; font-family: var(--font-en); font-size: 16px; }
+  .opt.right { background: var(--good-bg); border-color: var(--teal); }
+  .opt.wrong { background: var(--bad-bg); border-color: var(--bad); }
+  .opt:disabled { cursor: default; color: var(--ink); opacity: 1; }
+  .fb { margin-top: 16px; display: grid; gap: 12px; }
+  .verdict { font-weight: 700; }
+  .verdict.ok { color: var(--teal); }
+  .verdict.no { color: var(--bad); }
+
+  /* sentences */
+  .chip { display: inline-flex; gap: 8px; align-items: baseline; flex-wrap: wrap; font-size: 15px; color: var(--muted); }
+  .chip .en { color: var(--accent); font-weight: 600; font-size: 16px; }
+  .big-sent { font-size: 21px; line-height: 1.6; text-align: right; direction: ltr; unicode-bidi: isolate; margin-top: 14px; overflow-wrap: anywhere; }
+  .big-he { font-size: 18px; color: var(--muted); margin-top: 12px; border-top: 1px solid var(--line); padding-top: 12px; line-height: 1.6; }
+  .nav-row { display: flex; gap: 8px; margin-top: 18px; }
+  .nav-row .btn { flex: 1; }
+  .more { margin-top: 10px; width: 100%; }
+
+  .spk { flex: none; width: 44px; height: 44px; border: 0; background: none; color: var(--teal); border-radius: 4px; display: inline-flex; align-items: center; justify-content: center; padding: 0; vertical-align: middle; }
+  .spk svg { width: 22px; height: 22px; fill: currentColor; }
+  .row-line { display: flex; align-items: center; gap: 2px; }
+  .row-line .row-head { flex: 1; min-width: 0; width: auto; }
+  .tip { background: var(--surface); border: 1px dashed var(--accent); border-radius: 6px; padding: 10px 12px; font-size: 15px; line-height: 1.6; unicode-bidi: plaintext; }
+  .tip b { color: var(--accent); }
+  .card > .tip { margin-top: 14px; }
+  .fc-line { display: flex; align-items: center; justify-content: center; gap: 6px; }
+  .pair { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .toast { position: fixed; z-index: 6; background: var(--ink); color: var(--bg); padding: 10px 14px; border-radius: 6px; font-size: 14px; text-align: center;
+    bottom: calc(76px + env(safe-area-inset-bottom, 0px));
+    left: max(16px, env(safe-area-inset-left, 0px)); right: max(16px, env(safe-area-inset-right, 0px)); }
+
+  .prog { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; font-size: 13px; color: var(--muted); }
+  .prog .bar { flex: 1; min-width: 40px; height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; }
+  .prog .fill { height: 100%; background: var(--teal); }
+  .prog .fill.done { background: var(--accent); }
+  .prog button { background: none; border: 0; color: var(--muted); font-size: 13px; padding: 0 2px; min-height: 36px; text-decoration: underline; }
+  .cats { display: flex; gap: 6px; overflow-x: auto; margin-bottom: 14px; padding-bottom: 2px; }
+  .cat { flex: none; min-height: 36px; padding: 0 12px; border: 1px solid var(--line); border-radius: 18px; background: var(--surface); font-size: 14px; }
+  .cat[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+  #fillBtn { margin-top: 8px; width: 100%; }
+  .sug { margin-top: 12px; display: grid; gap: 8px; }
+  .sug-row { display: flex; gap: 8px; }
+  .sug-row select { flex: 1; min-width: 0; min-height: 44px; background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: 4px; padding: 0 10px; font-family: inherit; font-size: 15px; }
+  .sug-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .sug-chip { min-height: 40px; padding: 0 12px; border: 1px dashed var(--accent); border-radius: 6px; background: none; font-family: var(--font-en); font-size: 14px; }
+  textarea.wr { width: 100%; min-height: 96px; resize: vertical; background: var(--bg); color: var(--ink); border: 1px solid var(--line); border-radius: 6px; padding: 10px; font-family: var(--font-en); font-size: 16px; line-height: 1.6; text-align: left; margin-top: 14px; }
+  textarea.wr:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
+  .wr-res { margin-top: 16px; display: grid; gap: 10px; }
+
+  .head-r { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+  .set-card h2 { font-size: 17px; margin: 0 0 8px; }
+  .set-card .note { margin: 0 0 4px; line-height: 1.7; }
+  .set-card label { display: block; font-size: 13px; color: var(--muted); margin: 12px 0 4px; }
+  .set-card input, .set-card textarea { width: 100%; background: var(--bg); color: var(--ink); border: 1px solid var(--line); border-radius: 6px; padding: 10px; font-family: var(--font-en); font-size: 15px; text-align: left; }
+  .set-card textarea { resize: vertical; }
+  .set-card .nav-row { margin-top: 14px; }
+  .set-card label.btn { display: flex; align-items: center; justify-content: center; margin: 0; color: var(--ink); font-size: 16px; cursor: pointer; }
+  .set-card + .set-card { margin-top: 14px; }
+  textarea:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
+  .vh { position: absolute; width: 1px; height: 1px; opacity: 0; overflow: hidden; }
+  #rankBox { margin-top: 20px; }
+  .rank-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
+  .rank-head h2 { font-size: 17px; margin: 0; }
+  .rank-list { border-top: 1px solid var(--line); }
+  .rank-row { display: flex; align-items: center; gap: 10px; padding: 10px 2px; border-bottom: 1px solid var(--line); }
+  .rank-n { flex: none; width: 22px; font-family: var(--font-en); font-size: 13px; color: var(--muted); text-align: center; }
+  .rank-mid { flex: 1; min-width: 0; display: grid; gap: 6px; }
+  .rank-w { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+  .rank-w .en { font-size: 16px; }
+  .rank-w .he-s { color: var(--muted); font-size: 14px; }
+  .rank-s { flex: none; font-family: var(--font-en); font-size: 14px; min-width: 44px; text-align: end; }
+  .rank-mid .bar { height: 5px; background: var(--line); border-radius: 3px; overflow: hidden; }
+  .rank-mid .fill { height: 100%; }
+  .fill.g { background: var(--teal); }
+  .fill.m { background: var(--accent); }
+  .fill.b { background: var(--bad); }
+  .rank-fresh { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 14px; color: var(--muted); margin-top: 6px; }
+
+  .seg { display: flex; gap: 6px; width: 100%; }
+  .seg-b { flex: 1; min-height: 36px; border: 1px solid var(--line); border-radius: 4px; background: none; font-size: 13px; font-weight: 500; padding: 0 6px; }
+  .seg-b[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  .tw { cursor: pointer; border-radius: 3px; }
+  .tw:hover { background: var(--line); }
+  .tw:focus-visible { outline: 2px solid var(--teal); outline-offset: 1px; }
+  .pop { position: fixed; z-index: 7; max-width: 560px; margin: 0 auto; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 14px; box-shadow: 0 6px 24px rgba(0, 0, 0, .28);
+    bottom: calc(76px + env(safe-area-inset-bottom, 0px));
+    left: max(16px, env(safe-area-inset-left, 0px)); right: max(16px, env(safe-area-inset-right, 0px)); }
+  .pop-top { display: flex; align-items: center; gap: 6px; }
+  .pop-w { font-family: var(--font-en); font-size: 20px; font-weight: 600; direction: ltr; overflow-wrap: anywhere; min-width: 0; }
+  .pop-x { margin-inline-start: auto; background: none; border: 0; color: var(--muted); min-height: 44px; padding: 0 6px; }
+  .pop-he { font-size: 18px; margin-top: 2px; min-height: 28px; }
+  .pop-act { display: flex; gap: 8px; margin-top: 12px; align-items: center; }
+  .pop-act .btn { flex: 1; }
+
+  /* basics tab */
+  .basics-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; color: var(--muted); font-size: 14px; }
+  .sec { border-bottom: 1px solid var(--line); }
+  .basics-list { border-top: 1px solid var(--line); }
+  .sec summary { list-style: none; cursor: pointer; min-height: 60px; padding: 12px 2px 12px 28px; display: flex; flex-direction: column; justify-content: center; gap: 2px; position: relative; }
+  .sec summary::-webkit-details-marker { display: none; }
+  .sec summary::after { content: ""; position: absolute; left: 8px; top: 50%; width: 8px; height: 8px; border-right: 2px solid var(--muted); border-bottom: 2px solid var(--muted); transform: translateY(-70%) rotate(45deg); }
+  .sec[open] summary::after { transform: translateY(-30%) rotate(-135deg); }
+  .sec summary:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
+  .sec-t { font-weight: 700; font-size: 17px; }
+  .sec-s { font-family: var(--font-en); font-size: 13px; color: var(--muted); direction: ltr; text-align: right; unicode-bidi: isolate; }
+  .sec-body { padding: 0 2px 18px; display: grid; gap: 4px; }
+  .sec-body .sent { margin-top: 8px; }
+  .note { margin: 0 0 8px; color: var(--muted); font-size: 15px; }
+  .cap { font-size: 13px; color: var(--muted); margin-top: 6px; }
+  .tbl-wrap { overflow-x: auto; margin: 6px 0 12px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); }
+  table { border-collapse: collapse; width: 100%; font-size: 15px; }
+  th { font-size: 12px; color: var(--muted); font-weight: 500; text-align: start; padding: 8px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  th.l { text-align: left; }
+  td { padding: 9px 10px; border-bottom: 1px solid var(--line); vertical-align: top; line-height: 1.45; }
+  tr:last-child td { border-bottom: 0; }
+  td.en { font-family: var(--font-en); font-size: 14px; direction: ltr; text-align: left; unicode-bidi: isolate; overflow-wrap: anywhere; }
+  .tips { margin: 4px 0 10px; padding-inline-start: 20px; display: grid; gap: 6px; font-size: 15px; line-height: 1.6; }
+
+  nav {
+    position: fixed; inset: auto 0 0 0; background: var(--surface); border-top: 1px solid var(--line);
+    display: flex; gap: 4px; z-index: 5;
+    padding-top: 8px;
+    padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+  }
+  nav button { flex: 1; min-height: 46px; border: 1px solid transparent; border-radius: 4px; background: none; font-weight: 700; color: var(--muted); font-size: 13px; padding: 0 2px; }
+  nav button[aria-selected="true"] { color: var(--accent-ink); background: var(--accent); }
+  @media (prefers-reduced-motion: no-preference) { .opt, .btn { transition: background .15s; } }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <div>
+      <h1>המילון שלי</h1>
+      <div class="sub" id="sub">עברית או אנגלית, והתרגום ההפוך מתווסף לאוצר המילים</div>
+    </div>
+    <div class="head-r"><div class="count" id="count"></div><button class="btn ghost small" id="gearBtn" type="button">הגדרות</button></div>
+  </header>
+  <div class="prog" id="prog"></div>
+  <div class="cats" id="cats" hidden></div>
+
+  <section id="view-words">
+    <form class="add" id="addForm">
+      <input id="wordInput" dir="auto" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="מילה בעברית או באנגלית">
+      <button class="btn" id="addBtn" type="submit">הוסף</button>
+    </form>
+    <div class="msg" id="addMsg" role="status"></div>
+    <button class="btn ghost small" id="fillBtn" type="button" hidden></button>
+    <div class="sug">
+      <div class="sug-row">
+        <select id="sugDomain" aria-label="תחום להצעות"></select>
+        <button class="btn ghost" id="sugBtn" type="button">הצע מילים</button>
+      </div>
+      <div class="sug-chips" id="sugChips"></div>
+      <button class="btn ghost small" id="sugAll" type="button" hidden>הוסף את כולן</button>
+    </div>
+    <div id="empty" class="empty" hidden>אוצר המילים ריק.<br>הקלד מילה בעברית או באנגלית למעלה, ותקבל את התרגום ההפוך ושלושה משפטים.</div>
+    <div class="list" id="list"></div>
+  </section>
+
+  <section id="view-flash" hidden>
+    <div class="card" id="flashCard"></div>
+    <div id="rankBox"></div>
+  </section>
+
+  <section id="view-sent" hidden>
+    <div class="card" id="sentCard"></div>
+  </section>
+
+  <section id="view-settings" hidden>
+    <div class="card set-card">
+      <h2>חיבור ל-Claude</h2>
+      <p class="note">בלי מפתח האפליקציה מתרגמת בסיסית ומביאה דוגמאות מהמילון. עם מפתח API מתווספים טיפים לזכירה, משפטים מעולם ההנדסה, תחומים, תשובות שגויות חכמות, הצעות מילים ובדיקת כתיבה. המפתח נשמר רק בטלפון הזה, ואפשר להשיג אותו ב-console.anthropic.com. העלות נקבעת לפי מספר הקריאות.</p>
+      <label for="keyInput">מפתח API</label>
+      <input id="keyInput" type="password" dir="ltr" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="sk-ant-...">
+      <label for="modelQuick">דגם מהיר (תרגום, טיפים, הצעות)</label>
+      <input id="modelQuick" dir="ltr" autocomplete="off" autocapitalize="none" spellcheck="false">
+      <label for="modelDefault">דגם מדויק (בדיקת כתיבה)</label>
+      <input id="modelDefault" dir="ltr" autocomplete="off" autocapitalize="none" spellcheck="false">
+      <div class="nav-row">
+        <button class="btn" id="keySave" type="button">שמור</button>
+        <button class="btn ghost" id="keyTest" type="button">בדוק חיבור</button>
+      </div>
+      <button class="del" id="keyClear" type="button">מחק את המפתח</button>
+      <div class="msg" id="keyMsg" role="status"></div>
+      <div class="cap" id="keyStatus"></div>
+    </div>
+    <div class="card set-card">
+      <h2>גיבוי והעברה</h2>
+      <p class="note">הורד גיבוי מדי פעם, כי המילים שמורות רק בדפדפן של הטלפון. כדי להעביר מילים מהגרסה הישנה, העתק משם את הגיבוי והדבק כאן.</p>
+      <div class="nav-row">
+        <button class="btn ghost" id="bkDownload" type="button">הורד גיבוי</button>
+        <button class="btn ghost" id="bkCopy" type="button">העתק גיבוי</button>
+      </div>
+      <label for="bkArea">הדבק כאן גיבוי כדי לייבא</label>
+      <textarea id="bkArea" dir="ltr" rows="4" spellcheck="false"></textarea>
+      <div class="nav-row">
+        <button class="btn" id="bkImport" type="button">ייבא</button>
+        <label class="btn ghost" for="bkFile">מקובץ</label>
+        <input class="vh" id="bkFile" type="file" accept=".json,application/json">
+      </div>
+      <div class="msg" id="bkMsg" role="status"></div>
+    </div>
+  </section>
+
+  <section id="view-write" hidden>
+    <div class="card" id="writeCard"></div>
+  </section>
+
+  <section id="view-basics" hidden>
+    <div class="basics-top">
+      <span>לחץ על נושא כדי לפתוח אותו</span>
+      <button class="btn ghost small" id="toggleAll" type="button">פתח הכול</button>
+    </div>
+    <div class="basics-list" id="basicsBox"></div>
+  </section>
+</div>
+
+<div class="toast" id="toast" role="status" hidden></div>
+<div class="pop" id="pop" role="dialog" aria-label="תרגום מילה" hidden></div>
+
+<nav aria-label="ניווט">
+  <button id="tabWords" aria-selected="true">אוצר מילים</button>
+  <button id="tabFlash" aria-selected="false">כרטיסיות</button>
+  <button id="tabSent" aria-selected="false">משפטים</button>
+  <button id="tabWrite" aria-selected="false">כתיבה</button>
+  <button id="tabBasics" aria-selected="false">יסודות</button>
+</nav>
+
+<script>
+(function () {
+  var words = [];
+  var col = null;
+  var sample = null;
+  var tab = "words";
+  var expanded = null;
+  var armedDelete = null;
+  var LS_KEY = "vocab-words-v2";
+  var LS_STATS = "vocab-stats-v1";
+  var stats = { goal: 10, days: {} };
+  var statDoc = null;
+  var catFilter = "";
+  var CAT_LABELS = { rf: "RF", hardware: "חומרה", software: "תוכנה", meetings: "ישיבות ועבודה", daily: "יומיומי", general: "כללי" };
+  var wr = { id: null, text: "", busy: false, res: null, saved: false };
+  var sugList = [];
+  var SUG_DOMAINS = [
+    ["RF and antenna engineering", "RF ואנטנות"],
+    ["electronic hardware design, PCB and lab work", "חומרה ומעבדה"],
+    ["software and firmware development", "תוכנה ו-firmware"],
+    ["meetings, emails and teamwork in a tech company", "ישיבות ועבודה בצוות"],
+    ["everyday spoken English", "יומיומי"]
+  ];
+
+  var fc = { deck: [], round: 0, right: 0, total: 0, answered: false, cur: null, dir: "en-he", mode: "due", lastId: null };
+  var sn = { hist: [], hp: -1, queue: [], counters: {}, busy: false, note: "" };
+
+  function $(id) { return document.getElementById(id); }
+  function el(tag, cls, text) {
+    var n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text != null) n.textContent = text;
+    return n;
+  }
+  function esc(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); }
+  function shuffle(a) { a = a.slice(); for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
+  function byId(id) { for (var i = 0; i < words.length; i++) if (words[i].id === id) return words[i]; return null; }
+  function normalize(d, id) {
+    d.id = id;
+    d.en = d.en || d.word || "";
+    d.he = d.he || d.translation || "";
+    d.sentences = Array.isArray(d.sentences) ? d.sentences : [];
+    d.alt = Array.isArray(d.alt) ? d.alt : [];
+    d.tip = typeof d.tip === "string" ? d.tip : "";
+    d.disHe = Array.isArray(d.disHe) ? d.disHe : [];
+    d.disEn = Array.isArray(d.disEn) ? d.disEn : [];
+    d.cat = typeof d.cat === "string" ? d.cat : "";
+    d.box = Number(d.box) || 0;
+    d.due = Number(d.due) || 0;
+    return d;
+  }
+
+  /* ---------- storage ---------- */
+  function lsLoad() { try { return JSON.parse(localStorage.getItem(LS_KEY) || "[]"); } catch (e) { return []; } }
+  function lsSave() { try { localStorage.setItem(LS_KEY, JSON.stringify(words)); } catch (e) {} }
+  function sortWords() { words.sort(function (a, b) { return (b.addedAt || 0) - (a.addedAt || 0); }); }
+
+  async function saveWord(w) {
+    if (col) { await col.doc(w.id).set(w); return; }
+    words.push(w); sortWords(); lsSave(); renderAll();
+  }
+  async function patchWord(w, patch) {
+    Object.assign(w, patch);
+    if (col) { await col.doc(w.id).update(patch); return; }
+    lsSave();
+  }
+  async function removeWord(id) {
+    if (col) { await col.doc(id).delete(); return; }
+    words = words.filter(function (x) { return x.id !== id; }); lsSave(); renderAll();
+  }
+
+  /* ---------- settings, AI connection, free translation, backup ---------- */
+  var LS_SET = "vocab-settings-v1";
+  var settings = { key: "", modelQuick: "claude-haiku-5-5", modelDefault: "claude-sonnet-5-5" };
+  var storageOk = true;
+  var POS_HE = { noun: "שם עצם", verb: "פועל", adjective: "שם תואר", adverb: "תואר פועל", preposition: "מילת יחס", pronoun: "כינוי גוף", conjunction: "מילת קישור", interjection: "קריאת הרגש", numeral: "מספר" };
+
+  function newId() { return "w" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+  function loadSettings() {
+    try {
+      var o = JSON.parse(localStorage.getItem(LS_SET) || "null");
+      if (o) {
+        settings.key = String(o.key || "");
+        settings.modelQuick = String(o.modelQuick || settings.modelQuick);
+        settings.modelDefault = String(o.modelDefault || settings.modelDefault);
+      }
+    } catch (e) {}
+  }
+  function saveSettings() { try { localStorage.setItem(LS_SET, JSON.stringify(settings)); } catch (e) { storageOk = false; } }
+
+  function parseLoose(text) {
+    var t = String(text || "").trim();
+    try { return JSON.parse(t); } catch (e1) {}
+    t = t.replace(/^```(?:json)?/i, "").replace(/```$/, "").trim();
+    try { return JSON.parse(t); } catch (e2) {}
+    var a = t.search(/[\[{]/);
+    var b = Math.max(t.lastIndexOf("]"), t.lastIndexOf("}"));
+    if (a >= 0 && b > a) { try { return JSON.parse(t.slice(a, b + 1)); } catch (e3) {} }
+    return undefined;
+  }
+  async function apiCall(prompt, model, maxTokens) {
+    var res;
+    try {
+      res = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "x-api-key": settings.key,
+          "anthropic-version": "2023-06-01",
+          "anthropic-dangerous-direct-browser-access": "true"
+        },
+        body: JSON.stringify({ model: model, max_tokens: maxTokens || 4096, messages: [{ role: "user", content: prompt }] })
+      });
+    } catch (e) { throw { code: "network", message: "אין חיבור לשרת" }; }
+    var data = null;
+    try { data = await res.json(); } catch (e) {}
+    if (!res.ok) {
+      var m = data && data.error && data.error.message ? data.error.message : "";
+      throw { code: res.status === 401 || res.status === 403 ? "not_granted" : res.status === 429 ? "rate_limited" : "upstream_error", status: res.status, message: m };
+    }
+    return (data && data.content ? data.content : []).filter(function (b) { return b.type === "text"; }).map(function (b) { return b.text; }).join("");
+  }
+  function makeAI() {
+    if (!settings.key) return null;
+    return {
+      json: async function (prompt, opts) {
+        var model = opts && opts.modelTier === "default" ? settings.modelDefault : settings.modelQuick;
+        var text = await apiCall(prompt + "\n\nReply with the JSON only, with no other text.", model, 4096);
+        var v = parseLoose(text);
+        if (v === undefined) throw { code: "invalid_json", text: text };
+        return v;
+      }
+    };
+  }
+
+  async function freeTranslate(text, from, to) {
+    var r;
+    try { r = await fetch("https://api.mymemory.translated.net/get?q=" + encodeURIComponent(text) + "&langpair=" + from + "|" + to); }
+    catch (e) { throw { code: "network" }; }
+    if (!r.ok) throw { code: "upstream_error" };
+    var d = await r.json();
+    var best = d && d.responseData ? String(d.responseData.translatedText || "").trim() : "";
+    if (!best || /MYMEMORY WARNING|INVALID|QUERY LENGTH/i.test(best)) throw { code: "upstream_error" };
+    var alts = [];
+    ((d && d.matches) || []).forEach(function (m) {
+      var t = m && typeof m.translation === "string" ? m.translation.trim() : "";
+      if (t && t.toLowerCase() !== best.toLowerCase() && alts.indexOf(t) < 0 && alts.length < 2) alts.push(t);
+    });
+    return { best: best, alts: alts };
+  }
+  async function freeBuild(text) {
+    var isHe = /[֐-׿]/.test(text);
+    var tr = await freeTranslate(text, isHe ? "he" : "en", isHe ? "en" : "he");
+    var en = (isHe ? tr.best : text).trim().replace(/[.!?]+$/, "");
+    var he = (isHe ? text : tr.best).trim();
+    if (/^[A-Z][a-z]+$/.test(en)) en = en.toLowerCase();
+    if (!en || /[֐-׿]/.test(en)) { setMsg("לא נמצא תרגום. נסה מילה אחרת.", true); return null; }
+    var pos = "", sents = [];
+    try {
+      var r = await fetch("https://api.dictionaryapi.dev/api/v2/entries/en/" + encodeURIComponent(en.toLowerCase()));
+      if (r.ok) {
+        var dd = await r.json();
+        var ex = [];
+        ((dd[0] && dd[0].meanings) || []).forEach(function (m) {
+          if (!pos && m.partOfSpeech) pos = POS_HE[m.partOfSpeech] || "";
+          (m.definitions || []).forEach(function (df) {
+            if (df.example && ex.length < 3 && ex.indexOf(df.example) < 0) ex.push(df.example);
+          });
+        });
+        for (var i = 0; i < ex.length; i++) {
+          var he2 = "";
+          try { he2 = (await freeTranslate(ex[i], "en", "he")).best; } catch (e) {}
+          sents.push({ en: ex[i], he: he2 });
+        }
+      }
+    } catch (e) {}
+    return normalize({ en: en, he: he, pos: pos, alt: tr.alts, tip: "", sentences: sents, disHe: [], disEn: [], cat: "", addedAt: Date.now(), right: 0, wrong: 0, lastSeen: 0 }, newId());
+  }
+
+  function backupText() {
+    return JSON.stringify({ app: "vocab", v: 1, exportedAt: new Date().toISOString(), words: words, stats: stats });
+  }
+  function importText(txt) {
+    var msg = $("bkMsg");
+    function say(t, err) { msg.textContent = t; msg.className = "msg" + (err ? " err" : ""); }
+    var o;
+    try { o = JSON.parse(String(txt || "").trim()); } catch (e) { say("הטקסט אינו גיבוי תקין.", true); return; }
+    var arr = Array.isArray(o) ? o : (o && Array.isArray(o.words) ? o.words : null);
+    if (!arr) { say("לא נמצאה רשימת מילים בגיבוי.", true); return; }
+    var added = 0, skipped = 0;
+    arr.forEach(function (x) {
+      if (!x || typeof x !== "object") { skipped++; return; }
+      var en = String(x.en || x.word || "").trim(), he = String(x.he || x.translation || "").trim();
+      if (!en || !he) { skipped++; return; }
+      if (words.some(function (w) { return w.en.toLowerCase() === en.toLowerCase(); })) { skipped++; return; }
+      var id = String(x.id || "");
+      if (!id || byId(id)) id = newId();
+      var w = normalize(Object.assign({}, x), id);
+      w.en = en; w.he = he;
+      w.sentences = w.sentences.filter(function (q) { return q && typeof q.en === "string"; }).map(function (q) { return { en: q.en, he: String(q.he || "") }; });
+      w.right = Number(x.right) || 0; w.wrong = Number(x.wrong) || 0;
+      w.lastSeen = Number(x.lastSeen) || 0; w.addedAt = Number(x.addedAt) || Date.now();
+      words.push(w); added++;
+    });
+    if (o && !Array.isArray(o) && o.stats && o.stats.days && typeof o.stats.days === "object") {
+      Object.keys(o.stats.days).forEach(function (k) {
+        var v = Number(o.stats.days[k]);
+        if (/^\d{4}-\d{2}-\d{2}$/.test(k) && v > 0) stats.days[k] = Math.max(stats.days[k] || 0, v);
+      });
+      saveStatsSoon();
+    }
+    sortWords(); lsSave();
+    say("יובאו " + added + " מילים" + (skipped ? ", דולגו " + skipped + " (קיימות או לא תקינות)" : "") + ".", false);
+    renderAll();
+  }
+
+  function renderSettings() {
+    var ae = document.activeElement;
+    if (ae && /^(INPUT|TEXTAREA)$/.test(ae.tagName) && $("view-settings").contains(ae)) return;
+    $("keyInput").value = settings.key;
+    $("modelQuick").value = settings.modelQuick;
+    $("modelDefault").value = settings.modelDefault;
+    $("keyStatus").textContent = sample
+      ? "מצב נוכחי: מחובר ל-Claude. מתווספים טיפים, משפטים הנדסיים, תחומים, הצעות מילים ובדיקת כתיבה."
+      : "מצב נוכחי: בסיסי, בלי מפתח. תרגום ודוגמאות מהמילון בלבד.";
+  }
+  function keySay(t, err) { var m = $("keyMsg"); m.textContent = t; m.className = "msg" + (err ? " err" : ""); }
+  function wireSettings() {
+    $("gearBtn").onclick = function () { showTab("settings"); };
+    $("keySave").onclick = function () {
+      settings.key = $("keyInput").value.trim();
+      settings.modelQuick = $("modelQuick").value.trim() || "claude-haiku-5-5";
+      settings.modelDefault = $("modelDefault").value.trim() || "claude-sonnet-5-5";
+      saveSettings();
+      sample = makeAI();
+      keySay(storageOk ? "נשמר." : "הדפדפן לא מאפשר לשמור את ההגדרות.", !storageOk);
+      document.activeElement && document.activeElement.blur && document.activeElement.blur();
+      renderAll();
+    };
+    $("keyClear").onclick = function () {
+      settings.key = ""; saveSettings(); sample = null; $("keyInput").value = "";
+      keySay("המפתח נמחק.", false); renderAll();
+    };
+    $("keyTest").onclick = async function () {
+      var k = $("keyInput").value.trim();
+      if (!k) { keySay("הדבק מפתח קודם.", true); return; }
+      var prev = settings.key;
+      settings.key = k;
+      var mq = $("modelQuick").value.trim() || "claude-haiku-5-5";
+      keySay("בודק...", false);
+      try {
+        await apiCall("Reply with the single word: ok", mq, 16);
+        keySay("החיבור תקין. אל תשכח ללחוץ שמור.", false);
+      } catch (e) {
+        var why = e && e.code === "network" ? "אין חיבור לאינטרנט, או שהדפדפן חסם את הבקשה."
+          : e && e.status === 401 ? "המפתח לא תקין."
+          : e && e.status === 404 ? "שם הדגם לא נמצא. בדוק את שדה הדגם."
+          : e && e.status === 429 ? "יותר מדי בקשות או שנגמר הקרדיט."
+          : "שגיאה" + (e && e.status ? " " + e.status : "") + (e && e.message ? ": " + e.message : "");
+        keySay(why, true);
+      }
+      settings.key = prev;
+    };
+    $("bkDownload").onclick = function () {
+      try {
+        var blob = new Blob([backupText()], { type: "application/json" });
+        var a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = "vocab-backup-" + dayKey(new Date()) + ".json";
+        document.body.append(a); a.click(); a.remove();
+        setTimeout(function () { URL.revokeObjectURL(a.href); }, 3000);
+      } catch (e) { toast("ההורדה לא זמינה. השתמש בהעתקה."); }
+    };
+    $("bkCopy").onclick = async function () {
+      try { await navigator.clipboard.writeText(backupText()); toast("הגיבוי הועתק."); }
+      catch (e) { var ta = $("bkArea"); ta.value = backupText(); ta.focus(); ta.select(); toast("סמן את הטקסט והעתק אותו ידנית."); }
+    };
+    $("bkImport").onclick = function () { importText($("bkArea").value); };
+    $("bkFile").onchange = function () {
+      var f = this.files && this.files[0];
+      if (!f) return;
+      var rd = new FileReader();
+      rd.onload = function () { importText(String(rd.result || "")); };
+      rd.readAsText(f);
+      this.value = "";
+    };
+  }
+
+  function init() {
+    try { localStorage.setItem("__t", "1"); localStorage.removeItem("__t"); } catch (e) { storageOk = false; }
+    loadSettings();
+    sample = makeAI();
+    words = lsLoad().map(function (d) { return normalize(d, d.id); });
+    sortWords();
+    try { loadStats(JSON.parse(localStorage.getItem(LS_STATS) || "null")); } catch (e) {}
+    if (!storageOk) $("sub").textContent = "הדפדפן לא שומר נתונים כאן. פתח את האפליקציה מכתובת אתר כדי שהמילים יישמרו.";
+    wireSettings();
+    renderAll();
+  }
+
+  /* ---------- progress, categories, extras ---------- */
+  function pad2(n) { return n < 10 ? "0" + n : "" + n; }
+  function dayKey(d) { return d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate()); }
+  function todayCount() { return stats.days[dayKey(new Date())] || 0; }
+  function streakDays() {
+    var d = new Date(), s = 0;
+    if ((stats.days[dayKey(d)] || 0) < stats.goal) d.setDate(d.getDate() - 1);
+    while ((stats.days[dayKey(d)] || 0) >= stats.goal && s < 400) { s++; d.setDate(d.getDate() - 1); }
+    return s;
+  }
+  function loadStats(o) {
+    var g = o ? Number(o.goal) : 10;
+    stats = { goal: [5, 10, 20, 30].indexOf(g) >= 0 ? g : 10, days: {} };
+    if (o && o.days && typeof o.days === "object") {
+      Object.keys(o.days).forEach(function (k) {
+        var v = Number(o.days[k]);
+        if (/^\d{4}-\d{2}-\d{2}$/.test(k) && v > 0) stats.days[k] = v;
+      });
+    }
+  }
+  var statsT = null;
+  function saveStatsSoon() {
+    if (!statDoc) { try { localStorage.setItem(LS_STATS, JSON.stringify(stats)); } catch (e) {} return; }
+    clearTimeout(statsT);
+    statsT = setTimeout(function () { statDoc.set(stats).catch(function () {}); }, 1500);
+  }
+  function addActivity(n) {
+    var k = dayKey(new Date());
+    stats.days[k] = (stats.days[k] || 0) + n;
+    var cut = new Date(); cut.setDate(cut.getDate() - 60);
+    var ck = dayKey(cut);
+    Object.keys(stats.days).forEach(function (x) { if (x < ck) delete stats.days[x]; });
+    saveStatsSoon(); renderProg();
+  }
+  function renderProg() {
+    var box = $("prog"); box.textContent = "";
+    var n = todayCount(), g = stats.goal, st = streakDays();
+    var dn = words.filter(isDue).length;
+    var t = el("span", null, "היום " + n + "/" + g + (st ? " · רצף " + st + (st === 1 ? " יום" : " ימים") : "") + (dn ? " · לחזרה " + dn : ""));
+    var bar = el("div", "bar");
+    var f = el("div", "fill" + (n >= g ? " done" : ""));
+    f.style.width = Math.min(100, Math.round(n / g * 100)) + "%";
+    bar.append(f);
+    var gb = el("button", null, "יעד " + g);
+    gb.type = "button";
+    gb.onclick = function () { var gs = [5, 10, 20, 30]; stats.goal = gs[(gs.indexOf(g) + 1) % gs.length]; saveStatsSoon(); renderProg(); };
+    box.append(t, bar, gb);
+  }
+
+  function cleanList(a) {
+    return (Array.isArray(a) ? a : []).filter(function (x) { return typeof x === "string" && x.trim(); })
+      .map(function (x) { return x.trim(); }).slice(0, 3);
+  }
+  function cleanCat(c) { c = String(c || "").toLowerCase().trim(); return CAT_LABELS[c] ? c : "general"; }
+  function visibleWords() { return catFilter ? words.filter(function (w) { return w.cat === catFilter; }) : words; }
+  function needsExtras(w) { return !w.tip || w.disHe.length < 3 || w.disEn.length < 3 || !w.cat; }
+
+  function setCat(k) {
+    catFilter = k;
+    fc.deck = []; fc.cur = null;
+    sn.hist = []; sn.hp = -1; sn.queue = [];
+    wr.id = null;
+    renderAll();
+  }
+  function renderCats() {
+    var box = $("cats"); box.textContent = "";
+    var counts = {};
+    words.forEach(function (w) { if (w.cat) counts[w.cat] = (counts[w.cat] || 0) + 1; });
+    var keys = Object.keys(CAT_LABELS).filter(function (k) { return counts[k]; });
+    if (catFilter && keys.indexOf(catFilter) < 0) catFilter = "";
+    if (tab === "basics" || tab === "settings" || keys.length < 2) { box.hidden = true; return; }
+    box.hidden = false;
+    var all = el("button", "cat", "הכול (" + words.length + ")");
+    all.type = "button";
+    all.setAttribute("aria-pressed", String(!catFilter));
+    all.onclick = function () { setCat(""); };
+    box.append(all);
+    keys.forEach(function (k) {
+      var b = el("button", "cat", CAT_LABELS[k] + " (" + counts[k] + ")");
+      b.type = "button";
+      b.setAttribute("aria-pressed", String(catFilter === k));
+      b.onclick = function () { setCat(catFilter === k ? "" : k); };
+      box.append(b);
+    });
+  }
+
+  async function fillExtras(list, btn) {
+    if (!sample || !list.length) return;
+    if (btn) { btn.disabled = true; btn.textContent = "משלים..."; }
+    var items = list.slice(0, 15).map(function (w) { return { en: w.en, he: w.he }; });
+    var prompt =
+      "For each word below (English with its Hebrew translation), reply with only a JSON array with one object per word, in the same order, each shaped like this:\n" +
+      '{"en": "the same English word", "tip": "' + TIP_HELP + '", ' +
+      '"dis_he": ["3 wrong Hebrew translations, close in meaning or sound but clearly not correct for this word"], ' +
+      '"dis_en": ["3 wrong English words, close in meaning or spelling to this word but clearly not a translation of the Hebrew"], ' +
+      '"cat": "exactly one of: rf, hardware, software, meetings, daily, general (where this word is most useful for an electrical or hi-tech engineer)"}\n\n' +
+      JSON.stringify(items);
+    try {
+      var arr = await sample.json(prompt, { modelTier: "quick", cache: false });
+      var n = 0;
+      if (Array.isArray(arr)) {
+        for (var i = 0; i < arr.length; i++) {
+          var r = arr[i];
+          if (!r) continue;
+          var key = String(r.en || "").toLowerCase();
+          var w = list.find(function (x) { return x.en.toLowerCase() === key; });
+          if (!w) continue;
+          var patch = {};
+          if (!w.tip && typeof r.tip === "string" && r.tip.trim()) patch.tip = r.tip.trim();
+          if (w.disHe.length < 3) { var a1 = cleanList(r.dis_he); if (a1.length) patch.disHe = a1; }
+          if (w.disEn.length < 3) { var a2 = cleanList(r.dis_en); if (a2.length) patch.disEn = a2; }
+          if (!w.cat) patch.cat = cleanCat(r.cat);
+          if (Object.keys(patch).length) { await patchWord(w, patch); n++; }
+        }
+      }
+      toast(n ? "הושלמו " + n + " מילים." : "לא התקבלו נתונים. נסה שוב.");
+    } catch (e) {
+      toast(e && e.code === "not_granted" ? "המפתח חסר או לא תקין. בדוק בהגדרות." : "לא הצלחתי להשלים. נסה שוב.");
+    }
+    renderAll();
+  }
+
+  /* ---------- speech, tips, toast ---------- */
+  var speechOk = typeof window.speechSynthesis !== "undefined" && typeof window.SpeechSynthesisUtterance !== "undefined";
+  var SPK_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10v4h4l5 4V6L7 10H3zm13.5 2a4.5 4.5 0 0 0-2.5-4v8a4.5 4.5 0 0 0 2.5-4zM14 3.2v2.1a7 7 0 0 1 0 13.4v2.1a9 9 0 0 0 0-17.6z"/></svg>';
+  var toastT = null;
+  function toast(t) {
+    var n = $("toast"); n.textContent = t; n.hidden = false;
+    clearTimeout(toastT);
+    toastT = setTimeout(function () { n.hidden = true; }, 3500);
+  }
+  function speak(text) {
+    try {
+      var ss = window.speechSynthesis;
+      ss.cancel();
+      var u = new SpeechSynthesisUtterance(text);
+      u.lang = "en-US"; u.rate = 0.9;
+      var vs = ss.getVoices().filter(function (v) { return /^en[-_]/i.test(v.lang); });
+      if (vs.length) u.voice = vs.find(function (v) { return /en[-_]US/i.test(v.lang); }) || vs[0];
+      u.onerror = function (ev) {
+        if (ev && ev.error && ev.error !== "canceled" && ev.error !== "interrupted") toast("ההשמעה לא זמינה בתצוגה הזאת.");
+      };
+      ss.speak(u);
+    } catch (e) { toast("ההשמעה לא זמינה בתצוגה הזאת."); }
+  }
+  function speakBtn(text, label) {
+    if (!speechOk) return null;
+    var b = el("button", "spk");
+    b.type = "button";
+    b.setAttribute("aria-label", label || "השמע: " + text);
+    b.innerHTML = SPK_SVG;
+    b.onclick = function (e) { e.stopPropagation(); speak(text); };
+    return b;
+  }
+  var TIP_HELP = "a short memory tip in Hebrew (1-2 sentences) that helps remember the English word: a Hebrew sound-alike, a word root or related word, a vivid image, or a link to engineering or hi-tech. Keep English words inside it as they are.";
+  function tipBlock(t) {
+    var d = el("div", "tip");
+    d.append(el("b", null, "טיפ לזכירה: "), document.createTextNode(t));
+    return d;
+  }
+  /* ---------- add word ---------- */
+  function setMsg(t, err) { var m = $("addMsg"); m.textContent = t || ""; m.className = "msg" + (err ? " err" : ""); }
+  function findDup(en, he) {
+    var e = (en || "").toLowerCase(), h = (he || "").trim();
+    return words.find(function (x) { return x.en.toLowerCase() === e || (h && x.he === h && x.en.toLowerCase() === e); }) || null;
+  }
+
+  async function addWord(raw) {
+    var text = raw.trim().replace(/\s+/g, " ");
+    if (!text) return;
+    var pre = words.find(function (x) { return x.en.toLowerCase() === text.toLowerCase() || x.he === text; });
+    if (pre) { expanded = pre.id; setMsg("המילה כבר באוצר.", false); $("wordInput").value = ""; renderAll(); return; }
+
+    $("addBtn").disabled = true; $("wordInput").disabled = true;
+    setMsg("מתרגם...", false);
+    try {
+      var w = null;
+      if (sample) {
+        var prompt =
+          "You help an Israeli engineer learn English. The user typed a word or phrase that is either Hebrew or English: \"" + text + "\".\n" +
+          "Detect the language and translate it into the other one. Reply with only a JSON object in exactly this shape:\n" +
+          '{"valid": true, "en": "the English word or phrase (base form)", "he": "the Hebrew word or phrase", "pos": "part of speech in Hebrew, for example שם עצם, פועל, שם תואר", ' +
+          '"alt": ["up to 2 other common translations, in the target language; may be empty"], ' +
+          '"tip": "' + TIP_HELP + '", ' +
+          '"dis_he": ["3 wrong Hebrew translations, close in meaning or sound but clearly not correct for this word"], ' +
+          '"dis_en": ["3 wrong English words, close in meaning or spelling to the English word but clearly not a translation of the Hebrew"], ' +
+          '"cat": "exactly one of: rf, hardware, software, meetings, daily, general (where this word is most useful for an electrical or hi-tech engineer)", ' +
+          '"sentences": [{"en": "English sentence", "he": "Hebrew translation of the whole sentence"}, {"en": "...", "he": "..."}, {"en": "...", "he": "..."}]}\n' +
+          "Rules: if the input is Hebrew, use the most common English translation for en. Exactly three sentences, each containing the English word or phrase (an inflected form only if the grammar needs it). " +
+          "Make the sentences realistic for a hi-tech and electrical engineering workplace (hardware, RF, firmware, labs, production, software, meetings), each in a different situation. " +
+          'If the input is not a real word or phrase, reply {"valid": false}.';
+        var d = await sample.json(prompt, { modelTier: "quick" });
+        if (!d || d.valid === false || typeof d.en !== "string" || typeof d.he !== "string" || !d.en || !d.he) {
+          setMsg("לא זוהתה מילה. בדוק את האיות.", true);
+        } else {
+          w = normalize({
+            en: d.en.trim(), he: d.he.trim(), pos: String(d.pos || ""),
+            alt: (Array.isArray(d.alt) ? d.alt : []).filter(function (x) { return typeof x === "string" && x; }).slice(0, 2),
+            tip: typeof d.tip === "string" ? d.tip.trim() : "",
+            disHe: cleanList(d.dis_he), disEn: cleanList(d.dis_en), cat: cleanCat(d.cat),
+            sentences: (Array.isArray(d.sentences) ? d.sentences : []).slice(0, 3).map(function (s) { return { en: String(s.en || ""), he: String(s.he || "") }; }).filter(function (s) { return s.en; }),
+            addedAt: Date.now(), right: 0, wrong: 0, lastSeen: 0
+          }, newId());
+        }
+      } else {
+        w = await freeBuild(text);
+      }
+      if (w) {
+        var dup = findDup(w.en, w.he);
+        if (dup) {
+          expanded = dup.id; setMsg("המילה כבר באוצר.", false); $("wordInput").value = ""; renderAll();
+        } else {
+          await saveWord(w);
+          expanded = w.id;
+          $("wordInput").value = "";
+          setMsg("נוסף: " + w.en + " = " + w.he, false);
+          renderAll();
+        }
+      }
+    } catch (e) {
+      var code = e && e.code;
+      setMsg(code === "not_granted" ? "המפתח חסר או לא תקין. בדוק בהגדרות." :
+             code === "rate_limited" ? "יותר מדי בקשות. נסה שוב בעוד רגע." :
+             code === "network" ? "אין חיבור לשירות התרגום. בדוק את האינטרנט." :
+             "לא הצלחתי לתרגם. נסה שוב.", true);
+    } finally {
+      $("addBtn").disabled = false; $("wordInput").disabled = false;
+    }
+  }
+
+  /* ---------- shared rendering ---------- */
+  function highlight(container, text, word) {
+    var re = new RegExp("\\b" + esc(word) + "\\w*", "i");
+    var m = re.exec(text);
+    var a = m ? m.index : -1, b = m ? m.index + m[0].length : -1;
+    var pos = 0;
+    text.replace(/[A-Za-z][A-Za-z'’-]*/g, function (tok, off) {
+      if (off > pos) container.append(document.createTextNode(text.slice(pos, off)));
+      var hit = off >= a && off < b;
+      var sp = el(hit ? "mark" : "span", "tw", tok);
+      sp.setAttribute("role", "button");
+      sp.tabIndex = 0;
+      sp.onclick = function (e) { e.stopPropagation(); openWordPop(tok, text); };
+      sp.onkeydown = function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); sp.click(); } };
+      container.append(sp);
+      pos = off + tok.length;
+      return tok;
+    });
+    if (pos < text.length) container.append(document.createTextNode(text.slice(pos)));
+  }
+
+  /* ---------- tap a word: translate and add ---------- */
+  var pop = null, popSeq = 0;
+  function closePop() {
+    popSeq++; pop = null;
+    var n = $("pop");
+    if (n) { n.hidden = true; n.textContent = ""; }
+  }
+  function renderPop() {
+    var n = $("pop"); n.textContent = "";
+    if (!pop) { n.hidden = true; return; }
+    n.hidden = false;
+    var top = el("div", "pop-top");
+    var w = el("span", "pop-w", pop.en);
+    w.setAttribute("dir", "ltr");
+    top.append(w);
+    var sp = speakBtn(pop.en); if (sp) top.append(sp);
+    var x = el("button", "pop-x", "סגור");
+    x.type = "button";
+    x.onclick = closePop;
+    top.append(x);
+    n.append(top);
+    n.append(el("div", "pop-he", pop.busy ? "מתרגם..." : (pop.he || pop.err)));
+    var act = el("div", "pop-act");
+    if (pop.have) act.append(el("div", "cap", "המילה כבר באוצר."));
+    else {
+      var add = el("button", "btn", pop.adding ? "מוסיף..." : "הוסף לאוצר");
+      add.type = "button";
+      add.disabled = pop.busy || !pop.he || !!pop.adding;
+      add.onclick = popAdd;
+      act.append(add);
+    }
+    n.append(act);
+  }
+  async function openWordPop(tok, sentence) {
+    var have = words.find(function (w) { return w.en.toLowerCase() === tok.toLowerCase(); });
+    var my = ++popSeq;
+    pop = { en: tok, he: have ? have.he : "", busy: !have, have: !!have, err: "", adding: false };
+    renderPop();
+    if (have) return;
+    try {
+      if (sample) {
+        var prompt = 'In the sentence "' + sentence + '", what does the English word "' + tok + '" mean? Reply with only JSON: ' +
+          '{"en": "the base (dictionary) form of the word, lowercase unless it is a proper noun", "he": "short Hebrew translation of the word as used in this sentence"}';
+        var d = await sample.json(prompt, { modelTier: "quick" });
+        if (my !== popSeq) return;
+        if (d && typeof d.en === "string" && typeof d.he === "string" && d.he.trim()) { pop.en = d.en.trim() || tok; pop.he = d.he.trim(); }
+        else pop.err = "לא התקבל תרגום. נסה שוב.";
+      } else {
+        var tr = await freeTranslate(tok, "en", "he");
+        if (my !== popSeq) return;
+        pop.en = tok.toLowerCase(); pop.he = tr.best;
+      }
+      var have2 = words.find(function (w) { return w.en.toLowerCase() === pop.en.toLowerCase(); });
+      if (have2) { pop.have = true; pop.he = have2.he; }
+    } catch (e) {
+      if (my !== popSeq) return;
+      pop.err = e && e.code === "not_granted" ? "המפתח חסר או לא תקין. בדוק בהגדרות." : "לא הצלחתי לתרגם. נסה שוב.";
+    }
+    pop.busy = false;
+    renderPop();
+  }
+  async function popAdd() {
+    var p = pop;
+    if (!p || !p.he || p.adding) return;
+    p.adding = true; renderPop();
+    await addWord(p.en);
+    var now = words.find(function (w) { return w.en.toLowerCase() === p.en.toLowerCase(); });
+    closePop();
+    toast(now ? "נוסף לאוצר: " + now.en + " = " + now.he : ($("addMsg").textContent || "ההוספה נכשלה."));
+  }
+
+  function sentenceBlock(s, word) {
+    var b = el("div", "sent");
+    var en = el("div", "s-en");
+    highlight(en, s.en, word);
+    b.append(en);
+    if (s.he) b.append(el("div", "he", s.he));
+    return b;
+  }
+
+  /* ---------- vocabulary tab ---------- */
+  function renderList() {
+    var miss = sample ? words.filter(needsExtras) : [];
+    var fbtn = $("fillBtn");
+    fbtn.hidden = !miss.length;
+    if (miss.length) { fbtn.disabled = false; fbtn.textContent = "השלם טיפים, תחומים ותשובות שגויות (" + miss.length + ")"; }
+    var list = $("list");
+    list.textContent = "";
+    $("empty").hidden = words.length > 0;
+    visibleWords().forEach(function (w) {
+      var row = el("div", "row");
+      var line = el("div", "row-line");
+      var head = el("button", "row-head");
+      head.setAttribute("aria-expanded", expanded === w.id ? "true" : "false");
+      head.append(el("span", "w", w.en), el("span", "t", w.he));
+      head.onclick = function () { expanded = expanded === w.id ? null : w.id; armedDelete = null; renderList(); };
+      var sp = speakBtn(w.en);
+      if (sp) line.append(sp);
+      line.append(head);
+      row.append(line);
+      if (expanded === w.id) {
+        var d = el("div", "detail");
+        if (w.pos || w.cat) d.append(el("div", "pos", [w.pos, w.cat ? "תחום: " + CAT_LABELS[w.cat] : ""].filter(Boolean).join(" · ")));
+        if (w.alt && w.alt.length) d.append(el("div", "alt", "עוד תרגומים: " + w.alt.join(", ")));
+        if (w.tip) d.append(tipBlock(w.tip));
+        if (sample && needsExtras(w)) {
+          var tb = el("button", "btn ghost small", w.tip ? "השלם תשובות שגויות ותחום" : "צור טיפ ותשובות שגויות");
+          tb.onclick = function () { fillExtras([w], tb); };
+          d.append(tb);
+        }
+        w.sentences.forEach(function (s) { d.append(sentenceBlock(s, w.en)); });
+        var st = el("div", "stats");
+        st.append(el("span", null, "הצלחות " + (w.right || 0) + "/" + ((w.right || 0) + (w.wrong || 0)) + " · חזרה: " + fmtDue(w)));
+        var del = el("button", "del" + (armedDelete === w.id ? " armed" : ""), armedDelete === w.id ? "לחץ שוב כדי למחוק" : "מחק מילה");
+        del.onclick = async function () {
+          if (armedDelete !== w.id) { armedDelete = w.id; renderList(); return; }
+          armedDelete = null; expanded = null;
+          try { await removeWord(w.id); } catch (e) { setMsg("המחיקה נכשלה.", true); }
+          renderAll();
+        };
+        st.append(del);
+        d.append(st);
+        row.append(d);
+      }
+      list.append(row);
+    });
+  }
+  function renderCount() { $("count").textContent = words.length ? words.length + " מילים" : ""; }
+
+  /* ---------- ranking ---------- */
+  var rankDir = "best";
+  function wRate(w) { var t = (w.right || 0) + (w.wrong || 0); return t ? (w.right || 0) / t : -1; }
+  function rankRow(w, n) {
+    var t = (w.right || 0) + (w.wrong || 0), p = Math.round(wRate(w) * 100);
+    var r = el("div", "rank-row");
+    r.append(el("span", "rank-n", String(n)));
+    var mid = el("div", "rank-mid");
+    var l1 = el("div", "rank-w");
+    l1.append(el("span", "en", w.en), el("span", "he-s", w.he));
+    var bar = el("div", "bar");
+    var f = el("div", "fill " + (p >= 70 ? "g" : p >= 40 ? "m" : "b"));
+    f.style.width = p + "%";
+    bar.append(f);
+    mid.append(l1, bar);
+    r.append(mid, el("span", "rank-s", (w.right || 0) + "/" + t));
+    return r;
+  }
+  function renderRank() {
+    var box = $("rankBox"); box.textContent = "";
+    var vis = visibleWords();
+    if (!vis.length) return;
+    var tried = vis.filter(function (w) { return wRate(w) >= 0; });
+    var fresh = vis.filter(function (w) { return wRate(w) < 0; });
+    tried.sort(function (a, b) {
+      var d = wRate(b) - wRate(a);
+      if (d) return d;
+      d = (b.right || 0) - (a.right || 0);
+      if (d) return d;
+      return (a.wrong || 0) - (b.wrong || 0);
+    });
+    if (rankDir === "worst") tried.reverse();
+    var head = el("div", "rank-head");
+    head.append(el("h2", null, "דירוג המילים"));
+    var tg = el("button", "btn ghost small", rankDir === "best" ? "מהטוב לחלש" : "מהחלש לטוב");
+    tg.type = "button";
+    tg.onclick = function () { rankDir = rankDir === "best" ? "worst" : "best"; renderRank(); };
+    head.append(tg);
+    box.append(head);
+    if (tried.length) {
+      var list = el("div", "rank-list");
+      tried.forEach(function (w, i) { list.append(rankRow(w, i + 1)); });
+      box.append(list);
+    } else {
+      box.append(el("div", "cap", "הדירוג יופיע אחרי שתענה על כמה כרטיסים. ההצלחות מוצגות כמספר תשובות נכונות מתוך כל הניסיונות."));
+    }
+    if (fresh.length) {
+      box.append(el("div", "cap", "עוד לא תורגלו (" + fresh.length + "):"));
+      var fl2 = el("div", "rank-fresh");
+      fresh.forEach(function (w) { fl2.append(el("span", "en", w.en)); });
+      box.append(fl2);
+    }
+  }
+
+  /* ---------- flashcards tab ---------- */
+  function fcNeeds(w) { return (w.wrong || 0) > (w.right || 0); }
+  var SRS_DAYS = [0, 1, 3, 7, 14, 30];
+  function isDue(w) { return !w.due || w.due <= Date.now(); }
+  function srsNext(w, ok) {
+    var b = w.box || 0, now = Date.now();
+    if (ok) { b = Math.min(5, b + 1); return { box: b, due: now + SRS_DAYS[b] * 864e5 }; }
+    b = Math.max(0, b - 2);
+    return { box: b, due: now + 10 * 60 * 1000 };
+  }
+  function fmtDue(w) {
+    var d = (w.due || 0) - Date.now();
+    if (d <= 0) return "עכשיו";
+    var m = Math.round(d / 60000);
+    if (m < 60) return "בעוד " + Math.max(1, m) + " דקות";
+    var h = Math.round(m / 60);
+    if (h < 24) return "בעוד " + h + (h === 1 ? " שעה" : " שעות");
+    var dd = Math.round(h / 24);
+    return dd === 1 ? "מחר" : "בעוד " + dd + " ימים";
+  }
+  function fcPool() {
+    var v = visibleWords();
+    if (fc.mode === "mistakes") return v.filter(fcNeeds);
+    if (fc.mode === "due") return v.filter(isDue).sort(function (a, b) { return (a.due || 0) - (b.due || 0); }).slice(0, 20);
+    return v;
+  }
+  function fcModeBtn() {
+    var vis = visibleWords();
+    var dueN = vis.filter(isDue).length, missN = vis.filter(fcNeeds).length;
+    var wrap = el("div", "seg");
+    [["due", "לחזרה (" + dueN + ")"], ["all", "כל המילים"], ["mistakes", "טעויות (" + missN + ")"]].forEach(function (m) {
+      var b = el("button", "seg-b", m[1]);
+      b.type = "button";
+      b.setAttribute("aria-pressed", String(fc.mode === m[0]));
+      b.onclick = function () { if (fc.mode !== m[0]) { fc.mode = m[0]; fc.deck = []; fc.cur = null; renderFlash(); } };
+      wrap.append(b);
+    });
+    return wrap;
+  }
+  function fcEmpty() {
+    var box = el("div");
+    if (fc.mode === "due") {
+      var nxt = Infinity;
+      visibleWords().forEach(function (w) { if (w.due && w.due < nxt) nxt = w.due; });
+      box.append(el("div", "empty", "סיימת את החזרה להיום." + (nxt < Infinity ? " המילה הבאה לחזרה: " + fmtDue({ due: nxt }) + "." : "")));
+      var row = el("div", "nav-row");
+      var fb = el("button", "btn ghost", "תרגול חופשי של כל המילים");
+      fb.type = "button";
+      fb.onclick = function () { fc.mode = "all"; fc.deck = []; fc.cur = null; renderFlash(); };
+      row.append(fb);
+      box.append(row);
+    } else {
+      box.append(el("div", "empty", fc.mode === "mistakes" ? "אין כרגע מילים לחזרה. כל מה שטעית בו כבר נענה נכון." : "אין מילים בתחום הזה."));
+    }
+    return box;
+  }
+
+  function fcNext() {
+    if (words.length < 2) { fc.cur = null; return; }
+    fc.deck = fc.deck.filter(function (id) { return !!byId(id); });
+    if (!fc.deck.length) {
+      fc.deck = shuffle(fcPool().map(function (w) { return w.id; }));
+      if (!fc.deck.length) { fc.cur = null; return; }
+      if (fc.deck.length > 1 && fc.deck[0] === fc.lastId) { var t = fc.deck[0]; fc.deck[0] = fc.deck[fc.deck.length - 1]; fc.deck[fc.deck.length - 1] = t; }
+      fc.round++;
+    }
+    var w = byId(fc.deck.shift());
+    var key = fc.dir === "en-he" ? "he" : "en";
+    var used = {}; used[w[key]] = 1;
+    var others = [];
+    ((fc.dir === "en-he" ? w.disHe : w.disEn) || []).forEach(function (t, i) {
+      if (others.length < 3 && typeof t === "string" && t && !used[t]) { used[t] = 1; var o = { id: "d" + i }; o[key] = t; others.push(o); }
+    });
+    shuffle(words.filter(function (x) { return x.id !== w.id; })).forEach(function (x) {
+      if (others.length < 3 && !used[x[key]]) { used[x[key]] = 1; others.push(x); }
+    });
+    fc.cur = { w: w, options: shuffle([w].concat(others)), picked: null };
+    fc.answered = false;
+    fc.lastId = w.id;
+  }
+  async function fcAnswer(o) {
+    if (fc.answered) return;
+    fc.answered = true;
+    var q = fc.cur, w = q.w;
+    q.picked = o.id;
+    var ok = o.id === w.id;
+    fc.total++; if (ok) fc.right++;
+    addActivity(1);
+    if (!ok) fc.deck.splice(Math.min(3, fc.deck.length), 0, w.id);
+    var pch = ok ? { right: (w.right || 0) + 1, lastSeen: Date.now() } : { wrong: (w.wrong || 0) + 1, lastSeen: Date.now() };
+    var sr = srsNext(w, ok); pch.box = sr.box; pch.due = sr.due;
+    Object.assign(w, pch);
+    renderFlash();
+    try { await patchWord(w, pch); } catch (e) {}
+  }
+  function renderFlash() { renderFlashCard(); renderRank(); }
+  function renderFlashCard() {
+    var card = $("flashCard");
+    card.textContent = "";
+    if (words.length < 2) { card.append(el("div", "empty", "כדי להתחיל צריך לפחות שתי מילים באוצר.")); return; }
+    if (!fc.cur || !byId(fc.cur.w.id)) fcNext();
+    if (!fc.cur) {
+      var t0 = el("div", "card-top");
+      t0.append(el("span", null, ""), fcModeBtn());
+      card.append(t0);
+      card.append(fcEmpty());
+      return;
+    }
+    var q = fc.cur, w = q.w;
+
+    var top = el("div", "card-top");
+    top.append(el("span", null, "סיבוב " + fc.round + " · נשארו " + (fc.deck.length + 1) + " · נכון " + fc.right + "/" + fc.total));
+    var sw = el("button", "btn ghost small", fc.dir === "en-he" ? "אנגלית ← עברית" : "עברית ← אנגלית");
+    sw.onclick = function () { fc.dir = fc.dir === "en-he" ? "he-en" : "en-he"; fc.deck.unshift(w.id); fcNext(); renderFlash(); };
+    top.append(sw, fcModeBtn());
+    card.append(top);
+
+    var fl = el("div", "fc-line");
+    fl.append(fc.dir === "en-he" ? el("div", "fc-word en", w.en) : el("div", "fc-word", w.he));
+    if (fc.dir === "en-he") { var sb = speakBtn(w.en); if (sb) fl.append(sb); }
+    card.append(fl);
+    var wt = (w.right || 0) + (w.wrong || 0);
+    var sc = el("div", "cap", wt ? "הצלחות במילה הזאת: " + (w.right || 0) + "/" + wt : "המילה הזאת עוד לא תורגלה");
+    sc.style.textAlign = "center";
+    card.append(sc);
+
+    var opts = el("div", "opts");
+    q.options.forEach(function (o) {
+      var b = el("button", "opt" + (fc.dir === "en-he" ? "" : " en"), fc.dir === "en-he" ? o.he : o.en);
+      if (fc.answered) {
+        b.disabled = true;
+        if (o.id === w.id) b.classList.add("right");
+        else if (o.id === q.picked) b.classList.add("wrong");
+      } else b.onclick = function () { fcAnswer(o); };
+      opts.append(b);
+    });
+    card.append(opts);
+
+    if (fc.answered) {
+      var fb = el("div", "fb");
+      var ok = q.picked === w.id;
+      fb.append(el("div", "verdict " + (ok ? "ok" : "no"), ok ? "נכון" : "לא נכון. התשובה: " + (fc.dir === "en-he" ? w.he : w.en)));
+      var pair = el("div", "pair"); pair.append(el("span", "en", w.en), document.createTextNode("= " + w.he));
+      var sp2 = speakBtn(w.en); if (sp2) pair.append(sp2);
+      fb.append(pair);
+      if (w.tip) fb.append(tipBlock(w.tip));
+      if (w.sentences[0]) fb.append(sentenceBlock(w.sentences[0], w.en));
+      var nx = el("button", "btn", "הבא");
+      nx.onclick = function () { fcNext(); renderFlash(); };
+      fb.append(nx);
+      card.append(fb);
+    }
+  }
+
+  /* ---------- sentences tab ---------- */
+  function snPickId() {
+    sn.queue = sn.queue.filter(function (id) { return !!byId(id); });
+    if (!sn.queue.length) sn.queue = shuffle(visibleWords().map(function (w) { return w.id; }));
+    return sn.queue.shift();
+  }
+  function snNext() {
+    if (sn.hp < sn.hist.length - 1) { sn.hp++; return; }
+    var id = snPickId(), w = byId(id);
+    var n = sn.counters[id] || 0;
+    var si = n % Math.max(1, w.sentences.length);
+    sn.counters[id] = n + 1;
+    sn.hist.push({ id: id, si: si });
+    sn.hp = sn.hist.length - 1;
+  }
+  async function snMore() {
+    var h = sn.hist[sn.hp]; if (!h || !sample || sn.busy) return;
+    var w = byId(h.id); if (!w) return;
+    sn.busy = true; sn.note = "בונה משפט חדש..."; renderSent();
+    var prompt =
+      'Write one new English sentence using the word or phrase "' + w.en + '" (Hebrew: ' + w.he + ") in a hi-tech or electrical engineering context. " +
+      "It must be different from these sentences:\n" + w.sentences.map(function (s) { return "- " + s.en; }).join("\n") +
+      '\nReply with only JSON: {"en": "the sentence", "he": "natural Hebrew translation of the whole sentence"}';
+    try {
+      var d = await sample.json(prompt, { modelTier: "quick", cache: false });
+      if (d && typeof d.en === "string" && d.en) {
+        var list = w.sentences.concat([{ en: d.en, he: String(d.he || "") }]).slice(-8);
+        await patchWord(w, { sentences: list });
+        h.si = list.length - 1;
+        sn.note = "";
+      } else sn.note = "לא התקבל משפט. נסה שוב.";
+    } catch (e) {
+      sn.note = e && e.code === "not_granted" ? "המפתח חסר או לא תקין. בדוק בהגדרות." : "לא הצלחתי ליצור משפט. נסה שוב.";
+    }
+    sn.busy = false; renderSent();
+  }
+  function renderSent() {
+    var card = $("sentCard");
+    card.textContent = "";
+    if (words.length < 1) { card.append(el("div", "empty", "הוסף מילה לאוצר כדי לראות משפטים.")); return; }
+    sn.hist = sn.hist.filter(function (h) { return !!byId(h.id); });
+    sn.hp = Math.min(sn.hp, sn.hist.length - 1);
+    if (sn.hp < 0) snNext();
+    var h = sn.hist[sn.hp], w = byId(h.id);
+    var s = w.sentences[h.si];
+
+    var top = el("div", "card-top");
+    var chip = el("span", "chip");
+    chip.append(el("span", "en", w.en), el("span", null, "= " + w.he));
+    var sp3 = speakBtn(w.en); if (sp3) chip.append(sp3);
+    top.append(chip);
+    top.append(el("span", null, sn.hist.length > 1 ? (sn.hp + 1) + "/" + sn.hist.length : ""));
+    card.append(top);
+
+    if (s) {
+      var en = el("div", "big-sent"); highlight(en, s.en, w.en);
+      card.append(en);
+      var sp4 = speakBtn(s.en, "השמע משפט"); if (sp4) card.append(sp4);
+      card.append(el("div", "big-he", s.he));
+      card.append(el("div", "cap", "לחץ על מילה במשפט כדי לתרגם ולהוסיף אותה לאוצר."));
+      if (w.tip) card.append(tipBlock(w.tip));
+    } else {
+      card.append(el("div", "empty", "אין עדיין משפט למילה הזאת."));
+    }
+
+    var row = el("div", "nav-row");
+    var prev = el("button", "btn ghost", "הקודם");
+    prev.disabled = sn.hp <= 0;
+    prev.onclick = function () { if (sn.hp > 0) { sn.hp--; renderSent(); } };
+    var nx = el("button", "btn", "הבא");
+    nx.onclick = function () { sn.note = ""; snNext(); renderSent(); };
+    row.append(prev, nx);
+    card.append(row);
+
+    if (sample) {
+      var more = el("button", "btn ghost more", "משפט חדש למילה הזאת");
+      more.disabled = sn.busy;
+      more.onclick = snMore;
+      card.append(more);
+    }
+    if (sn.note) card.append(el("div", "msg", sn.note));
+  }
+
+  /* ---------- word suggestions ---------- */
+  async function suggest() {
+    if (!sample) { toast("ההצעות דורשות מפתח API בהגדרות."); return; }
+    var b = $("sugBtn");
+    b.disabled = true; b.textContent = "מחפש...";
+    var have = words.map(function (w) { return w.en; }).slice(0, 150).join(", ");
+    var prompt =
+      "Suggest 10 useful English words or short phrases (at most 3 words each) for a Hebrew-speaking engineer who wants to learn vocabulary in this area: " + $("sugDomain").value +
+      ". Intermediate to advanced level, practical, common in real work. Do not include any of these words he already has: " + (have || "none") +
+      ". Reply with only a JSON array of 10 strings.";
+    try {
+      var arr = await sample.json(prompt, { modelTier: "quick", cache: false });
+      sugList = (Array.isArray(arr) ? arr : [])
+        .filter(function (x) { return typeof x === "string" && x.trim(); })
+        .map(function (x) { return x.trim(); })
+        .filter(function (x) { return !words.some(function (w) { return w.en.toLowerCase() === x.toLowerCase(); }); })
+        .slice(0, 10);
+      renderSug();
+      if (!sugList.length) toast("לא התקבלו הצעות. נסה שוב.");
+    } catch (e) {
+      toast(e && e.code === "not_granted" ? "המפתח חסר או לא תקין. בדוק בהגדרות." : "לא הצלחתי להציע מילים. נסה שוב.");
+    }
+    b.disabled = false; b.textContent = "הצע מילים";
+  }
+  function renderSug() {
+    var box = $("sugChips"); box.textContent = "";
+    sugList.forEach(function (s) {
+      var c = el("button", "sug-chip", s + "  +");
+      c.type = "button";
+      c.setAttribute("dir", "ltr");
+      c.onclick = async function () {
+        c.disabled = true;
+        await addWord(s);
+        sugList = sugList.filter(function (x) { return x !== s; });
+        renderSug();
+      };
+      box.append(c);
+    });
+    $("sugAll").hidden = sugList.length < 2;
+  }
+  async function addAllSug() {
+    var list = sugList.slice();
+    $("sugAll").disabled = true;
+    for (var i = 0; i < list.length; i++) {
+      setMsg("מוסיף " + (i + 1) + " מתוך " + list.length + "...", false);
+      await addWord(list[i]);
+      sugList = sugList.filter(function (x) { return x !== list[i]; });
+      renderSug();
+      if ($("addMsg").className.indexOf("err") >= 0) break;
+    }
+    $("sugAll").disabled = false;
+  }
+
+  /* ---------- writing tab ---------- */
+  function wrPick() {
+    var vis = visibleWords();
+    var pool = vis.filter(function (w) { return w.id !== wr.id; });
+    if (!pool.length) pool = vis;
+    var w = pool[Math.floor(Math.random() * pool.length)];
+    wr.id = w ? w.id : null; wr.text = ""; wr.res = null; wr.saved = false; wr.busy = false;
+  }
+  async function wrCheck() {
+    var w = byId(wr.id), txt = wr.text.trim();
+    if (!w || !txt || !sample || wr.busy) return;
+    wr.busy = true; renderWrite();
+    var prompt =
+      'A Hebrew-speaking electrical engineer is practicing English. Target word: "' + w.en + '" (Hebrew: ' + w.he + "). The learner wrote this sentence:\n\"" + txt + "\"\n\n" +
+      'Reply with only a JSON object: {"uses_word": true if the sentence contains the target word (any inflected form) used with the right meaning, ' +
+      '"correct": true if the sentence is grammatically correct and sounds natural, ' +
+      '"corrected": "the sentence with the smallest changes needed (identical to the input if it is already fine)", ' +
+      '"he": "Hebrew translation of the corrected sentence", ' +
+      '"notes": "1-3 short sentences in Hebrew: say what is good, and explain each mistake with the grammar rule in simple words. Keep quoted English parts as they are."}';
+    try {
+      var d = await sample.json(prompt, { modelTier: "default" });
+      wr.res = {
+        uses: d.uses_word !== false, correct: d.correct === true,
+        corrected: String(d.corrected || txt), he: String(d.he || ""), notes: String(d.notes || "")
+      };
+      wr.saved = false;
+      addActivity(1);
+    } catch (e) {
+      toast(e && e.code === "not_granted" ? "המפתח חסר או לא תקין. בדוק בהגדרות." : "לא הצלחתי לבדוק. נסה שוב.");
+    }
+    wr.busy = false; renderWrite();
+  }
+  function renderWrite() {
+    var card = $("writeCard"); card.textContent = "";
+    if (!visibleWords().length) { card.append(el("div", "empty", "הוסף מילה לאוצר כדי לתרגל כתיבה.")); return; }
+    if (!sample) { card.append(el("div", "empty", "בדיקת משפטים דורשת מפתח API בהגדרות.")); return; }
+    if (!wr.id || !byId(wr.id)) wrPick();
+    var w = byId(wr.id);
+
+    var top = el("div", "card-top");
+    var chip = el("span", "chip");
+    chip.append(el("span", "en", w.en), el("span", null, "= " + w.he));
+    var sp = speakBtn(w.en); if (sp) chip.append(sp);
+    top.append(chip);
+    card.append(top);
+    card.append(el("div", "cap", "כתוב משפט באנגלית עם המילה הזאת. כדאי להשתמש בהקשר של העבודה."));
+
+    var ta = el("textarea", "wr");
+    ta.id = "wrText";
+    ta.setAttribute("dir", "ltr");
+    ta.setAttribute("spellcheck", "true");
+    ta.setAttribute("aria-label", "המשפט שלך באנגלית");
+    ta.placeholder = "Write your sentence here";
+    ta.value = wr.text;
+    ta.disabled = wr.busy;
+    ta.oninput = function () { wr.text = ta.value; chk.disabled = wr.busy || !ta.value.trim(); };
+    card.append(ta);
+
+    var row = el("div", "nav-row");
+    var chk = el("button", "btn", wr.busy ? "בודק..." : "בדוק");
+    chk.type = "button";
+    chk.disabled = wr.busy || !wr.text.trim();
+    chk.onclick = wrCheck;
+    var nx = el("button", "btn ghost", "מילה אחרת");
+    nx.type = "button";
+    nx.disabled = wr.busy;
+    nx.onclick = function () { wrPick(); renderWrite(); };
+    row.append(chk, nx);
+    card.append(row);
+
+    if (wr.res) {
+      var r = wr.res, good = r.correct && r.uses;
+      var box = el("div", "wr-res");
+      box.append(el("div", "verdict " + (good ? "ok" : "no"), good ? "מצוין" : (r.uses ? "כמעט, יש מה לתקן" : "המילה לא שולבה נכון במשפט")));
+      var changed = r.corrected.trim() !== wr.text.trim();
+      if (changed) box.append(el("div", "cap", "הגרסה המתוקנת:"));
+      var s = el("div", "sent");
+      var se = el("div", "s-en"); highlight(se, r.corrected, w.en);
+      s.append(se);
+      if (r.he) s.append(el("div", "he", r.he));
+      box.append(s);
+      var sp2 = speakBtn(r.corrected, "השמע משפט"); if (sp2) box.append(sp2);
+      if (r.notes) box.append(el("div", null, r.notes));
+      if (r.uses) {
+        if (wr.saved) box.append(el("div", "cap", "נשמר בטאב המשפטים."));
+        else {
+          var sv = el("button", "btn ghost small", "שמור כמשפט למילה");
+          sv.type = "button";
+          sv.onclick = async function () {
+            sv.disabled = true;
+            try {
+              await patchWord(w, { sentences: w.sentences.concat([{ en: r.corrected, he: r.he }]).slice(-8) });
+              wr.saved = true;
+            } catch (e) { toast("השמירה נכשלה."); }
+            renderWrite();
+          };
+          box.append(sv);
+        }
+      }
+      card.append(box);
+    }
+  }
+
+  /* ---------- basics tab (static reference) ---------- */
+  var BASICS = [
+    { title: "כינויי גוף: מי עושה", sub: "I, you, he, she, it, we, they",
+      tables: [{ head: ["אנגלית", "עברית", "הערה"], ltr: [0], rows: [
+        ["I", "אני", "תמיד באות גדולה"],
+        ["you", "אתה / את / אתם / אתן", "אותה מילה ליחיד וגם לרבים"],
+        ["he", "הוא", "גבר או בן"],
+        ["she", "היא", "אישה או בת"],
+        ["it", "זה / הוא / היא", "חפץ, חיה או רעיון, לא בן אדם"],
+        ["we", "אנחנו / אנו", "אני ועוד מישהו"],
+        ["they", "הם / הן", "רבים, גם עבור חפצים. אותה מילה לזכר ולנקבה"]
+      ] }],
+      tips: ["אלה הכינויים שבאים לפני הפועל: He works. They work.", "אחרי he, she, it הפועל בהווה מקבל s: works, runs, tests."],
+      ex: [{ en: "She tests the antenna.", he: "היא בודקת את האנטנה." }, { en: "They are in the lab.", he: "הם במעבדה." }] },
+
+    { title: "כינויי גוף: מושא", sub: "me, you, him, her, it, us, them",
+      tables: [{ head: ["אנגלית", "עברית", "דוגמה"], ltr: [0, 2], rows: [
+        ["me", "אותי / לי", "Call me."],
+        ["you", "אותך / לך", "I can see you."],
+        ["him", "אותו / לו", "Send him the file."],
+        ["her", "אותה / לה", "Tell her."],
+        ["it", "אותו / אותה (חפץ)", "Test it."],
+        ["us", "אותנו / לנו", "Join us."],
+        ["them", "אותם / אותן / להם", "Ask them."]
+      ] }],
+      tips: ["הכינויים האלה באים אחרי פועל או אחרי מילת יחס: with me, for them, to her."] },
+
+    { title: "שייכות: שלי, שלך, שלו", sub: "my, your, his, her, its, our, their",
+      tables: [{ head: ["כינוי", "לפני שם עצם", "לבד", "עברית"], ltr: [0, 1, 2], rows: [
+        ["I", "my", "mine", "שלי"],
+        ["you", "your", "yours", "שלך / שלכם"],
+        ["he", "his", "his", "שלו"],
+        ["she", "her", "hers", "שלה"],
+        ["it", "its", "-", "שלו / שלה (חפץ)"],
+        ["we", "our", "ours", "שלנו"],
+        ["they", "their", "theirs", "שלהם / שלהן"]
+      ] }],
+      tips: ["my, your, his, her, its, our, their באים לפני שם עצם: my laptop.", "mine, yours, hers, ours, theirs עומדים לבד: This laptop is mine.", "its בלי גרש הוא שייכות. it's עם גרש הוא it is.", "הסיומת 's היא של: Dan's board = הלוח של דן."],
+      ex: [{ en: "This is my laptop. It is mine.", he: "זה המחשב הנייד שלי. הוא שלי." }, { en: "Their lab is on the second floor.", he: "המעבדה שלהם בקומה השנייה." }] },
+
+    { title: "כינויים רפלקסיביים: בעצמי", sub: "myself, yourself, himself ...",
+      tables: [{ head: ["כינוי", "עברית", "דוגמה"], ltr: [0, 2], rows: [
+        ["myself", "בעצמי / את עצמי", "I did it myself."],
+        ["yourself", "בעצמך", "Do it yourself."],
+        ["himself", "בעצמו", "He fixed it himself."],
+        ["herself", "בעצמה", "She built it herself."],
+        ["itself", "בעצמו / בעצמה (חפץ)", "The system resets itself."],
+        ["ourselves", "בעצמנו", "We tested it ourselves."],
+        ["yourselves", "בעצמכם (רבים)", "Check it yourselves."],
+        ["themselves", "בעצמם", "They designed it themselves."]
+      ] }],
+      tips: ["by myself, by himself ועוד: לבד, בלי עזרה."] },
+
+    { title: "to be: להיות", sub: "am, is, are, was, were",
+      tables: [{ head: ["נושא", "הווה", "שלילה", "עבר", "עבר שלילה"], ltr: [0, 1, 2, 3, 4], rows: [
+        ["I", "am (I'm)", "am not (I'm not)", "was", "wasn't"],
+        ["you", "are (you're)", "aren't", "were", "weren't"],
+        ["he / she / it", "is (he's)", "isn't", "was", "wasn't"],
+        ["we", "are (we're)", "aren't", "were", "weren't"],
+        ["they", "are (they're)", "aren't", "were", "weren't"]
+      ] }],
+      tips: ["בעברית אין פועל בהווה: אני מהנדס. באנגלית חובה: I am an engineer.", "בשאלה הפועל עובר לפני הנושא: Are you ready? Is it on?", "משתמשים ב-to be עם שם תואר (The board is hot), עם מקום (We are in the lab) ועם מקצוע (He is an engineer)."],
+      ex: [{ en: "The board is hot.", he: "הלוח חם." }, { en: "Are you ready?", he: "אתה מוכן?" }, { en: "We were in the lab yesterday.", he: "היינו במעבדה אתמול." }] },
+
+    { title: "קיצורים", sub: "I'm, don't, it's, can't ...",
+      tables: [{ head: ["קיצור", "מלא", "דוגמה"], ltr: [0, 1, 2], rows: [
+        ["I'm", "I am", "I'm ready."],
+        ["you're / we're / they're", "you are / we are / they are", "They're in the lab."],
+        ["he's / she's / it's", "he is / she is / it is", "It's working."],
+        ["I'll / we'll / they'll", "I will / we will / they will", "I'll send it."],
+        ["I've / we've / they've", "I have / we have / they have", "We've finished."],
+        ["I'd", "I would / I had", "I'd like a coffee."],
+        ["don't / doesn't / didn't", "do not / does not / did not", "I don't know."],
+        ["isn't / aren't / wasn't", "is not / are not / was not", "It isn't ready."],
+        ["can't", "cannot", "I can't open it."],
+        ["won't", "will not", "It won't start."]
+      ] }],
+      tips: ["it's = it is. its = שלו / שלה.", "הסיומת 's יכולה להיות is (Dan's late) או שייכות (Dan's board)."] },
+
+    { title: "do / does / don't / doesn't", sub: "הווה פשוט: שלילה ושאלה",
+      tables: [
+        { cap: "הווה פשוט עם הפועל work", head: ["נושא", "חיובי", "שלילה", "שאלה"], ltr: [0, 1, 2, 3], rows: [
+          ["I", "I work", "I don't work", "Do I work?"],
+          ["you", "you work", "you don't work", "Do you work?"],
+          ["we", "we work", "we don't work", "Do we work?"],
+          ["they", "they work", "they don't work", "Do they work?"],
+          ["he / she / it", "he works", "he doesn't work", "Does he work?"]
+        ] },
+        { cap: "תשובות קצרות", head: ["שאלה", "כן", "לא"], ltr: [0, 1, 2], rows: [
+          ["Do you work here?", "Yes, I do.", "No, I don't."],
+          ["Does she work here?", "Yes, she does.", "No, she doesn't."],
+          ["Do they work here?", "Yes, they do.", "No, they don't."]
+        ] },
+        { cap: "בעבר: did ו-didn't לכולם", head: ["חיובי", "שלילה", "שאלה"], ltr: [0, 1, 2], rows: [
+          ["I worked", "I didn't work", "Did I work?"],
+          ["she worked", "she didn't work", "Did she work?"],
+          ["they worked", "they didn't work", "Did they work?"]
+        ] }
+      ],
+      tips: ["do ו-don't הולכים עם I, you, we, they.", "does ו-doesn't הולכים עם he, she, it.", "don't = do not. doesn't = does not. didn't = did not.", "אחרי does, doesn't, did, didn't הפועל תמיד בצורה הבסיסית, בלי s ובלי ed: She doesn't work, לא doesn't works.", "שאלה: Do או Does, אחר כך הנושא, אחר כך הפועל: Does it work?", "עם מילת שאלה: Where does he work?"],
+      ex: [{ en: "I don't know the answer.", he: "אני לא יודע את התשובה." }, { en: "She doesn't work on Fridays.", he: "היא לא עובדת בימי שישי." }, { en: "Does this board support Bluetooth?", he: "האם הלוח הזה תומך בבלוטות'?" }, { en: "Did you test it yesterday?", he: "בדקת את זה אתמול?" }] },
+
+    { title: "have / has: יש ל...", sub: "have, has, don't have, doesn't have",
+      tables: [{ head: ["נושא", "חיובי", "שלילה", "שאלה"], ltr: [0, 1, 2, 3], rows: [
+        ["I", "I have", "I don't have", "Do I have?"],
+        ["you", "you have", "you don't have", "Do you have?"],
+        ["we", "we have", "we don't have", "Do we have?"],
+        ["they", "they have", "they don't have", "Do they have?"],
+        ["he / she / it", "he has", "he doesn't have", "Does he have?"]
+      ] }],
+      tips: ["has רק עם he, she, it.", "אחרי doesn't ו-does חוזרים ל-have: She doesn't have, לא doesn't has.", "have / has + צורה שלישית של פועל = הווה שלם: I have finished. She has finished.", "haven't = have not. hasn't = has not."],
+      ex: [{ en: "She has a spare antenna.", he: "יש לה אנטנה רזרבית." }, { en: "We don't have enough time.", he: "אין לנו מספיק זמן." }, { en: "Do you have a probe?", he: "יש לך probe?" }] },
+
+    { title: "this / that / these / those", sub: "זה, ההוא, אלה, אלה שם",
+      tables: [{ head: ["מילה", "מרחק", "מספר", "עברית"], ltr: [0], rows: [
+        ["this", "קרוב", "יחיד", "זה (פה)"],
+        ["that", "רחוק", "יחיד", "זה / ההוא (שם)"],
+        ["these", "קרוב", "רבים", "אלה (פה)"],
+        ["those", "רחוק", "רבים", "אלה (שם)"]
+      ] }],
+      tips: ["this ו-these: קרוב אליך. that ו-those: רחוק ממך.", "אחרי this ו-that שם עצם ביחיד: this chip. אחרי these ו-those רבים: these chips.", "that יכול להיות גם ש: I think that it works."],
+      ex: [{ en: "This is my desk.", he: "זה השולחן שלי." }, { en: "That antenna is broken.", he: "האנטנה ההיא שבורה." }, { en: "These cables are too short.", he: "הכבלים האלה קצרים מדי." }, { en: "Those are the new boards.", he: "אלה הלוחות החדשים." }] },
+
+    { title: "there is / there are: יש, אין", sub: "there is, there are",
+      tables: [{ head: ["מבנה", "עברית", "דוגמה"], ltr: [0, 2], rows: [
+        ["there is + יחיד", "יש", "There is a problem."],
+        ["there are + רבים", "יש", "There are two problems."],
+        ["there isn't / there aren't", "אין", "There isn't any power."],
+        ["Is there ...? / Are there ...?", "האם יש", "Is there a spare cable?"]
+      ] }],
+      tips: ["there is הוא יש. it is הוא זה או הוא.", "There is a cable on the desk = יש כבל על השולחן. It is a cable = זה כבל."] },
+
+    { title: "מילות שאלה", sub: "what, who, where, when, why, how",
+      tables: [{ head: ["מילה", "עברית", "דוגמה"], ltr: [0, 2], rows: [
+        ["what", "מה", "What does it do?"],
+        ["who", "מי", "Who is on the call?"],
+        ["where", "איפה / לאן", "Where is the lab?"],
+        ["when", "מתי", "When does it start?"],
+        ["why", "למה", "Why does it fail?"],
+        ["how", "איך", "How does it work?"],
+        ["which", "איזה / איזו", "Which board is yours?"],
+        ["whose", "של מי", "Whose laptop is this?"],
+        ["how many", "כמה (דברים שסופרים)", "How many boards do we have?"],
+        ["how much", "כמה (כמות או מחיר)", "How much does it cost?"],
+        ["how long", "כמה זמן", "How long does the test take?"],
+        ["how often", "באיזו תדירות", "How often do you calibrate?"],
+        ["what time", "באיזו שעה", "What time is the meeting?"]
+      ] }],
+      tips: ["הסדר: מילת שאלה, do / does (או am / is / are), נושא, פועל. Where does she work? Where is she?", "כש-who או what הם הנושא אין does: Who works here?"] },
+
+    { title: "פעלי עזר: can, should, must", sub: "can, could, will, would, should, must",
+      tables: [{ head: ["פועל", "משמעות", "דוגמה"], ltr: [0, 2], rows: [
+        ["can", "יכול, מסוגל", "I can fix it."],
+        ["could", "יכול (עבר או נימוס)", "Could you send the file?"],
+        ["will", "יעשה (עתיד, החלטה)", "I will call you."],
+        ["would", "היה, הייתי רוצה", "I would like a coffee."],
+        ["should", "צריך, כדאי (המלצה)", "You should test it again."],
+        ["must", "חייב, מוכרח", "You must wear a lab coat."],
+        ["may / might", "אולי, מותר", "It might fail."],
+        ["have to", "חייב (כורח חיצוני)", "I have to leave now."],
+        ["need to", "צריך", "We need to calibrate it."]
+      ] }],
+      tips: ["אחרי can, could, will, would, should, must, may, might בא פועל בסיסי: בלי to ובלי s. She can work, לא She can works.", "שלילה: can't, couldn't, won't, wouldn't, shouldn't, mustn't.", "mustn't = אסור. don't have to = לא חייב. אלה שני דברים שונים."],
+      ex: [{ en: "You mustn't touch the board.", he: "אסור לך לגעת בלוח." }, { en: "You don't have to stay.", he: "אתה לא חייב להישאר." }] },
+
+    { title: "זמנים: הסיכום", sub: "present, past, future",
+      tables: [{ head: ["זמן", "צורה", "דוגמה"], ltr: [1, 2], rows: [
+        ["הווה פשוט: הרגלים ועובדות", "V / V+s", "I work here. She works here."],
+        ["הווה ממשיך: עכשיו", "am / is / are + V-ing", "I am testing it now."],
+        ["עבר פשוט: הסתיים", "V-ed או V2", "I tested it yesterday."],
+        ["הווה שלם: קשור להווה", "have / has + V3", "I have tested it."],
+        ["עתיד: החלטה או חיזוי", "will + V", "I will test it tomorrow."],
+        ["עתיד: תוכנית", "am / is / are going to + V", "I am going to test it."]
+      ] }],
+      tips: ["V2 היא הצורה השנייה של הפועל (went) ו-V3 הצורה השלישית (gone). הטבלה בסוף הטאב.", "מילות רמז: now, right now (ממשיך). yesterday, last week (עבר פשוט). already, yet, ever (הווה שלם). tomorrow (עתיד)."],
+      ex: [{ en: "I am testing it now.", he: "אני בודק את זה עכשיו." }, { en: "I have tested it.", he: "בדקתי את זה." }, { en: "I will test it tomorrow.", he: "אני אבדוק את זה מחר." }] },
+
+    { title: "השוואה ו-than", sub: "bigger than, more than, the best",
+      tables: [{ head: ["צורה", "עברית", "דוגמה"], ltr: [0, 2], rows: [
+        ["adj + er than", "יותר... מ", "This chip is faster than that one."],
+        ["more + adj than", "יותר... מ (שם תואר ארוך)", "This design is more reliable than the old one."],
+        ["less + adj than", "פחות... מ", "It is less noisy than before."],
+        ["as + adj + as", "באותה מידה כמו", "It is as fast as the old one."],
+        ["the + adj + est", "הכי...", "This is the smallest board."],
+        ["the most + adj", "הכי... (ארוך)", "It is the most expensive part."],
+        ["good, better, best", "טוב, יותר טוב, הכי טוב", "The new filter is better than the old one."],
+        ["bad, worse, worst", "רע, יותר גרוע, הכי גרוע", "The signal is worse today."],
+        ["more than / less than", "יותר מ / פחות מ", "We have more than ten boards."]
+      ] }],
+      tips: ["than משמש רק בהשוואה: bigger than.", "then פירושו אחר כך או אז: First we measure, then we calculate.", "שם תואר קצר מקבל er (fast, faster). שם תואר ארוך מקבל more (reliable, more reliable)."] },
+
+    { title: "a, an, the וכמויות", sub: "some, any, much, many, few",
+      tables: [{ head: ["מילה", "מתי", "דוגמה"], ltr: [0, 2], rows: [
+        ["a", "יחיד, לפני צליל עיצור", "a board"],
+        ["an", "יחיד, לפני צליל תנועה", "an antenna, an hour"],
+        ["the", "משהו מסוים שכבר ידוע", "the board on the desk"],
+        ["some", "קצת, כמה (בחיוב)", "We have some spare parts."],
+        ["any", "בשלילה ובשאלה", "We don't have any spare parts."],
+        ["much", "הרבה (לא סופרים)", "We don't have much time."],
+        ["many", "הרבה (סופרים)", "We have many boards."],
+        ["a lot of", "הרבה (שניהם)", "There is a lot of noise."],
+        ["a few", "כמה (סופרים)", "I have a few questions."],
+        ["a little", "קצת (לא סופרים)", "Add a little solder."],
+        ["few / little", "כמעט אין", "There are few options."],
+        ["every / each", "כל", "Every board is tested."],
+        ["all", "כל, כולם", "All boards passed."],
+        ["no / none", "אין, אף אחד", "No board failed."]
+      ] }],
+      tips: ["an תלוי בצליל ולא באות: an hour, a university.", "אין a לפני רבים או דברים שלא סופרים: boards, water, noise."] },
+
+    { title: "מילות יחס", sub: "in, on, at, to, from, with, for",
+      tables: [{ head: ["מילה", "עברית", "דוגמה"], ltr: [0, 2], rows: [
+        ["at", "בשעה, בנקודה", "at 5 pm, at the lab"],
+        ["on", "ביום, על משטח", "on Monday, on the table"],
+        ["in", "בחודש, בשנה, בתוך", "in May, in 2026, in the box"],
+        ["to", "אל", "I go to the lab."],
+        ["from", "מ", "from Monday to Friday"],
+        ["for", "בשביל, למשך", "for you, for two hours"],
+        ["with", "עם", "with a probe"],
+        ["without", "בלי", "without power"],
+        ["by", "ליד, על ידי, עד", "by the door, by Friday"],
+        ["of", "של, מתוך", "a list of parts"],
+        ["about", "על, בערך", "about the project, about 5 volts"],
+        ["into", "לתוך", "Plug it into the board."],
+        ["under", "מתחת", "under the desk"],
+        ["between", "בין", "between two boards"],
+        ["before", "לפני", "before the test"],
+        ["after", "אחרי", "after the meeting"],
+        ["during", "במהלך", "during the test"],
+        ["until", "עד", "until 6 pm"]
+      ] }],
+      tips: ["זמן: at שעה, on יום, in חודש ושנה.", "מקום: at נקודה, on משטח, in חלל."] },
+
+    { title: "מילות קישור", sub: "and, but, or, because, so, if",
+      tables: [{ head: ["מילה", "עברית", "דוגמה"], ltr: [0, 2], rows: [
+        ["and", "וגם", "I design and test boards."],
+        ["but", "אבל", "It works but it is slow."],
+        ["or", "או", "Do you want tea or coffee?"],
+        ["because", "כי", "It failed because the power was low."],
+        ["so", "אז, לכן", "The power was low, so it failed."],
+        ["if", "אם", "If it fails, call me."],
+        ["when", "כש", "Call me when it is ready."],
+        ["while", "בזמן ש", "I wait while it compiles."],
+        ["although", "למרות ש", "Although it is small, it is fast."],
+        ["that", "ש", "I think that it works."],
+        ["then", "אחר כך", "Then we measure."]
+      ] }] },
+
+    { title: "פעלים לא סדירים", sub: "go, went, gone",
+      tables: [{ head: ["V1", "V2", "V3", "עברית"], ltr: [0, 1, 2], rows: [
+        ["be", "was / were", "been", "להיות"],
+        ["have", "had", "had", "להיות ל..."],
+        ["do", "did", "done", "לעשות"],
+        ["go", "went", "gone", "ללכת"],
+        ["get", "got", "got / gotten", "לקבל"],
+        ["make", "made", "made", "לייצר"],
+        ["take", "took", "taken", "לקחת"],
+        ["see", "saw", "seen", "לראות"],
+        ["come", "came", "come", "לבוא"],
+        ["know", "knew", "known", "לדעת"],
+        ["give", "gave", "given", "לתת"],
+        ["find", "found", "found", "למצוא"],
+        ["think", "thought", "thought", "לחשוב"],
+        ["tell", "told", "told", "לספר"],
+        ["say", "said", "said", "לומר"],
+        ["run", "ran", "run", "לרוץ"],
+        ["write", "wrote", "written", "לכתוב"],
+        ["build", "built", "built", "לבנות"],
+        ["break", "broke", "broken", "לשבור"],
+        ["choose", "chose", "chosen", "לבחור"],
+        ["send", "sent", "sent", "לשלוח"],
+        ["read", "read", "read", "לקרוא"],
+        ["put", "put", "put", "לשים"],
+        ["set", "set", "set", "להגדיר"],
+        ["keep", "kept", "kept", "לשמור"],
+        ["begin", "began", "begun", "להתחיל"],
+        ["drive", "drove", "driven", "לנהוג"],
+        ["buy", "bought", "bought", "לקנות"],
+        ["bring", "brought", "brought", "להביא"],
+        ["leave", "left", "left", "לעזוב"],
+        ["show", "showed", "shown", "להראות"],
+        ["hold", "held", "held", "להחזיק"],
+        ["lose", "lost", "lost", "לאבד"],
+        ["meet", "met", "met", "לפגוש"]
+      ] }],
+      tips: ["V2 משמש בעבר פשוט: I wrote the code.", "V3 משמש אחרי have / has: I have written the code."] }
+  ];
+
+  var basicsBuilt = false;
+  function renderBasics() {
+    if (basicsBuilt) return;
+    basicsBuilt = true;
+    var box = $("basicsBox");
+    BASICS.forEach(function (sec, i) {
+      var d = el("details", "sec");
+      if (i === 0) d.open = true;
+      var s = el("summary");
+      s.append(el("span", "sec-t", sec.title), el("span", "sec-s", sec.sub));
+      d.append(s);
+      var body = el("div", "sec-body");
+      (sec.tables || []).forEach(function (t) {
+        if (t.cap) body.append(el("div", "cap", t.cap));
+        var wrap = el("div", "tbl-wrap");
+        var tb = el("table");
+        var hr = el("tr");
+        t.head.forEach(function (h, ci) { hr.append(el("th", t.ltr.indexOf(ci) >= 0 ? "l" : null, h)); });
+        var thead = el("thead"); thead.append(hr); tb.append(thead);
+        var tbody = el("tbody");
+        t.rows.forEach(function (r) {
+          var tr = el("tr");
+          r.forEach(function (c, ci) { tr.append(el("td", t.ltr.indexOf(ci) >= 0 ? "en" : null, c)); });
+          tbody.append(tr);
+        });
+        tb.append(tbody); wrap.append(tb); body.append(wrap);
+      });
+      if (sec.tips && sec.tips.length) {
+        var ul = el("ul", "tips");
+        sec.tips.forEach(function (t) { ul.append(el("li", null, t)); });
+        body.append(ul);
+      }
+      (sec.ex || []).forEach(function (x) {
+        var b = el("div", "sent");
+        b.append(el("div", "s-en", x.en), el("div", "he", x.he));
+        body.append(b);
+      });
+      d.append(body);
+      box.append(d);
+    });
+  }
+  function toggleAllSections() {
+    var ds = $("basicsBox").querySelectorAll("details");
+    var anyClosed = Array.prototype.some.call(ds, function (d) { return !d.open; });
+    Array.prototype.forEach.call(ds, function (d) { d.open = anyClosed; });
+    $("toggleAll").textContent = anyClosed ? "סגור הכול" : "פתח הכול";
+  }
+
+  /* ---------- tabs & events ---------- */
+  function renderAll() {
+    renderCount(); renderProg(); renderCats();
+    if (tab === "words") renderList();
+    else if (tab === "flash") renderFlash();
+    else if (tab === "sent") renderSent();
+    else if (tab === "write") { var ae = document.activeElement; if (!(ae && ae.id === "wrText")) renderWrite(); }
+    else if (tab === "settings") renderSettings();
+    else renderBasics();
+  }
+  function showTab(name) {
+    closePop();
+    tab = name;
+    $("view-words").hidden = name !== "words";
+    $("view-flash").hidden = name !== "flash";
+    $("view-sent").hidden = name !== "sent";
+    $("view-basics").hidden = name !== "basics";
+    $("view-write").hidden = name !== "write";
+    $("view-settings").hidden = name !== "settings";
+    $("tabWrite").setAttribute("aria-selected", String(name === "write"));
+    $("tabBasics").setAttribute("aria-selected", String(name === "basics"));
+    $("tabWords").setAttribute("aria-selected", String(name === "words"));
+    $("tabFlash").setAttribute("aria-selected", String(name === "flash"));
+    $("tabSent").setAttribute("aria-selected", String(name === "sent"));
+    renderAll();
+    window.scrollTo(0, 0);
+  }
+  $("tabWords").onclick = function () { showTab("words"); };
+  $("tabFlash").onclick = function () { showTab("flash"); };
+  $("tabSent").onclick = function () { showTab("sent"); };
+  $("tabBasics").onclick = function () { showTab("basics"); };
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape") closePop(); });
+  $("tabWrite").onclick = function () { showTab("write"); };
+  $("fillBtn").onclick = function () { fillExtras(words.filter(needsExtras), $("fillBtn")); };
+  $("sugBtn").onclick = suggest;
+  $("sugAll").onclick = addAllSug;
+  (function () {
+    var sel = $("sugDomain");
+    SUG_DOMAINS.forEach(function (d) { var o = document.createElement("option"); o.value = d[0]; o.textContent = d[1]; sel.append(o); });
+  })();
+  $("toggleAll").onclick = toggleAllSections;
+  $("addForm").addEventListener("submit", function (e) { e.preventDefault(); addWord($("wordInput").value); });
+
+  renderAll();
+  init();
+})();
+</script>
+
+<script>
+if ("serviceWorker" in navigator && /^https?:$/.test(location.protocol)) {
+  window.addEventListener("load", function () { navigator.serviceWorker.register("sw.js").catch(function () {}); });
+}
+</script>
+</body>
+</html>
